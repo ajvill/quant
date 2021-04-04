@@ -1,2 +1,16 @@
-*.txt
+# directories
+.idea/
+.ipynb_checkpoints/
+accounts/
+etfs/
+test_csvs/
+test_txts/
+venv/
+
+# symbolic links
+ibapi
+
+# files
 *.csv
+*.json
+*.txt
