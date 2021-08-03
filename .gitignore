@@ -3,8 +3,8 @@
 .ipynb_checkpoints/
 accounts/
 etfs/
-test_csvs/
-test_txts/
+csvs_for_testing_only/
+txt_for_testing_only/
 venv/
 
 # symbolic links
