@@ -6,6 +6,7 @@ etfs/
 csvs_for_testing_only/
 txt_for_testing_only/
 venv/
+backup/
 
 # symbolic links
 ibapi
@@ -14,3 +15,8 @@ ibapi
 *.csv
 *.json
 *.txt
+
+# python directory
+__pycache__/
+
+
