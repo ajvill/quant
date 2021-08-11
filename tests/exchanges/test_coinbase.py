@@ -1,6 +1,7 @@
 import time
 
 from pytest import mark
+import pandas as pd
 
 
 @mark.coinbase
@@ -190,18 +191,71 @@ class CoinbaseTests:
         if len(stats) == 2:
             assert True
 
-    @mark.test1
     @mark.cb_products
     def test_list_accounts(self, coinbase_client):
-        coinbase = coinbase_client
+        """
+        Calls for a list of accounts from the exchange.  Then check the account keys fields of each account.
+        Fail test if field does not match
 
+        :param coinbase_client:
+        """
+        coinbase = coinbase_client
         accounts_list = coinbase.list_accounts()
         account_key_list = ['id', 'currency', 'balance', 'available', 'hold', 'profile_id', 'trading_enabled']
 
         for account in accounts_list:
-            #print('TEst')
-            key_test = [x for x in list(account.keys()) if x in account_key_list]
-            if len(key_test) > 0:
-                assert True
-            else:
+            key_test = [x in account_key_list for x in account.keys()]
+
+            if False in key_test:
                 assert False
+            else:
+                assert True
+
+    @mark.cb_products
+    def test_get_an_account(self, coinbase_client):
+        """
+        Grab a list of accounts from the exchange.  Then uses each accounts id to pass to get_an_account.
+        Next we check each account uses the account_key_list field
+
+        :param coinbase_client:
+        """
+        coinbase = coinbase_client
+
+        # Exchange returns a single account with these fields
+        account_key_list = ['id', 'balance', 'hold', 'available', 'currency']
+
+        accounts_list = coinbase.list_accounts()
+        for acct_dict in accounts_list:
+            account = coinbase.get_an_account(acct_dict['id'])
+            key_test = [x in account_key_list for x in account.keys()]
+
+            if False in key_test:
+                assert False
+            else:
+                assert True
+
+    @mark.test1
+    @mark.cb_products
+    def test_get_account_history(self, coinbase_client, btc_id):
+        """
+        Grab a list of accounts from the exchange.  Then uses each accounts id to pass to get_an_account.
+        Next we check each account uses the account_key_list field
+
+        :param coinbase_client:
+        """
+        coinbase = coinbase_client
+
+        # Exchange returns a single account with these fields
+        data = {
+            'id': '',
+            'amount': '',
+            'balance': '',
+            'created_at': '',
+            'type': '',
+            'details': {'order_id': '',
+                        'product_id': '',
+                        'trade_id': ''
+                        }
+        }
+
+        account_history = coinbase.get_account_history(btc_id)

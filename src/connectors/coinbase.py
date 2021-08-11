@@ -37,12 +37,12 @@ class CoinbaseClient:
         :param acct_id:
         :return:
         """
-        history_data = self.make_request('GET', '/accounts/{}/ledger'.format(acct_id), None)
+        request = self.make_request('GET', '/accounts/{}/ledger'.format(acct_id), None)
 
         account_history = []
 
-        if history_data is not None:
-            for hist in history_data:
+        if request is not None:
+            for hist in request:
                 print(hist)
                 data = {
                     'id': hist['id'],
