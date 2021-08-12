@@ -321,20 +321,20 @@ class CoinbaseClient:
         :param acct_id:
         :return holds_data:
         """
-        exchange_info = self.make_request('GET', '/accounts/{}/holds'.format(acct_id), None)
+        response = self.make_request('GET', '/accounts/{}/holds'.format(acct_id), None)
 
         holds_data = []
 
-        if exchange_info is not None:
-            for hold in exchange_info:
+        if response is not None:
+            for hold in response:
                 data = {
-                    'id': exchange_info['id'],
-                    'account_id': exchange_info['account_id'],
-                    'created_at': exchange_info['created_at'],
-                    'updated_at': exchange_info['updated_at'],
-                    'amount': float(exchange_info['amount']),
-                    'type': exchange_info['type'],
-                    'ref': exchange_info['ref']
+                    'id': response['id'],
+                    'account_id': response['account_id'],
+                    'created_at': response['created_at'],
+                    'updated_at': response['updated_at'],
+                    'amount': float(response['amount']),
+                    'type': response['type'],
+                    'ref': response['ref']
                 }
                 holds_data.append(data)
         return holds_data
@@ -588,7 +588,6 @@ class CoinbaseClient:
         if method == 'DELETE':
             response = requests.delete(self.base_url + endpoint, params=str(data), auth=self.auth)
         elif method == 'GET':
-            #response = requests.get(self.base_url + endpoint, params=str(data), auth=self.auth)
             response = requests.get(self.base_url + endpoint, params=data, auth=self.auth)
         elif method == 'POST':
             response = requests.post(self.base_url + endpoint, json=data, auth=self.auth)
@@ -603,25 +602,37 @@ class CoinbaseClient:
             return None
 
     def place_new_order(self, order):
-        exchange_response = self.make_request('POST', '/orders', order)
+        """
+        You can place two types of orders: limit and market. Orders can only be placed if your account has sufficient
+        funds. Each profile can have a maximum of 500 open orders on a product. Once reached, the profile will not be
+        able to place any new orders until the total number of open orders is below 500. Once an order is placed, your
+        account funds will be put on hold for the duration of the order. How much and which funds are put on hold
+        depends on the order type and parameters specified. See the Holds details below.
 
-        order_data = {
-            'id': exchange_response['id'],
-            'price': float(exchange_response['price']),
-            'size': float(exchange_response['size']),
-            'stp': exchange_response['stp'],
-            'type': exchange_response['type'],
-            'time_in_force': exchange_response['time_in_force'],
-            'post_only': exchange_response['post_only'],
-            'created_at': exchange_response['created_at'],
-            'fill_fees': float(exchange_response['fill_fees']),
-            'filled_size': float(exchange_response['filled_size']),
-            'executed_value': float(exchange_response['executed_value']),
-            'status': exchange_response['status'],
-            'settled': exchange_response['settled']
-        }
+        :param order:
+        :return:
+        """
+        response = self.make_request('POST', '/orders', order)
 
-        return order_data
+        if response is not None:
+            order_data = {
+                'id': response['id'],
+                'price': float(response['price']),
+                'size': float(response['size']),
+                'stp': response['stp'],
+                'type': response['type'],
+                'time_in_force': response['time_in_force'],
+                'post_only': response['post_only'],
+                'created_at': response['created_at'],
+                'fill_fees': float(response['fill_fees']),
+                'filled_size': float(response['filled_size']),
+                'executed_value': float(response['executed_value']),
+                'status': response['status'],
+                'settled': response['settled']
+            }
+            return order_data
+        else:
+            return None
 
     def start_ws(self):
         self.ws = websocket.WebSocketApp(self.wss_url,

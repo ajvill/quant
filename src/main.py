@@ -19,14 +19,8 @@ logger.addHandler(stream_handler)
 logger.addHandler(file_handler)
 
 if __name__ == '__main__':
-    #binance = BinanceFuturesClient(True)
     coinbase = CoinbaseClient(sandbox=True)
 
-    print(coinbase.list_accounts())
-    #print(coinbase.get_balances())
-    #print(coinbase.get_an_account('cd3bd0ec-8cd5-470a-a39d-265e8c59d82c'))
-    #print(coinbase.get_account_history('cd3bd0ec-8cd5-470a-a39d-265e8c59d82c'))
-    #print(coinbase.get_holds('cd3bd0ec-8cd5-470a-a39d-265e8c59d82c'))
     #order = {
     #    'size': 0.01,
     #    'price': 0.100,
