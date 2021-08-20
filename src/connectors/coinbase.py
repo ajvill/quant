@@ -609,7 +609,7 @@ class CoinbaseClient:
         account funds will be put on hold for the duration of the order. How much and which funds are put on hold
         depends on the order type and parameters specified. See the Holds details below.
 
-        :param order:
+        :param order: order a dictionary passed to exchange.  May be a limit or market order type
         :return:
         """
         response = self.make_request('POST', '/orders', order)

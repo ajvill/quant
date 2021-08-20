@@ -294,27 +294,76 @@ class CoinbaseTests:
         holds = coinbase.get_holds(btc_acct_id)
         print('Test')
 
-    @mark.test1
+    @mark.place_new_order
     @mark.cb_products
-    def test_place_limit_order(self, coinbase_client, order_resp_key_list, btc_usd):
+    def test_place_new_order_limit(self, coinbase_client, order_resp_key_list, btc_usd):
         """
-        Testing placing a limit order
+        Testing placing a limit order.
         :param coinbase_client:
         """
         coinbase = coinbase_client
 
         # Exchange returns a single account with these fields
+        # cancel_after is an optional field min, hour, day
         limit_order_data = {
             'type': 'limit',
+            'side': 'buy',
+            'product_id': btc_usd,
             'price': 0.200,
             'size': 0.01,
             'time_in_force': 'GTC',
-            'side': 'buy',
-            'product_id': btc_usd
+            'cancel_after': '05,00,00'
         }
 
         limit_order_response = coinbase.place_new_order(limit_order_data)
         key_test = [x in order_resp_key_list for x in limit_order_response.keys()]
+
+        if False not in key_test:
+            assert True
+
+    @mark.test1
+    @mark.place_new_order
+    @mark.cb_products
+    def test_place_new_order_market_size(self, coinbase_client, order_resp_key_list, btc_usd):
+        """
+        Testing placing a limit order by desired amount in base currency
+        :param coinbase_client:
+        """
+        coinbase = coinbase_client
+
+        # Exchange returns a single account with these fields
+        market_order_data = {
+            'type': 'market',
+            'side': 'buy',
+            'product_id': btc_usd,
+            'size': 0.01,
+        }
+
+        market_order_response = coinbase.place_new_order(market_order_data)
+        key_test = [x in order_resp_key_list for x in market_order_response.keys()]
+
+        if False not in key_test:
+            assert True
+
+    @mark.place_new_order
+    @mark.cb_products
+    def test_place_new_order_market_funds(self, coinbase_client, order_resp_key_list, btc_usd):
+        """
+        Testing placing a limit order desired amount of quote currency to use
+        :param coinbase_client:
+        """
+        coinbase = coinbase_client
+
+        # Exchange returns a single account with these fields
+        market_order_data = {
+            'type': 'market',
+            'side': 'buy',
+            'product_id': btc_usd,
+            'funds': 10,
+        }
+
+        market_order_response = coinbase.place_new_order(market_order_data)
+        key_test = [x in order_resp_key_list for x in market_order_response.keys()]
 
         if False not in key_test:
             assert True

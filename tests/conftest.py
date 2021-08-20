@@ -47,6 +47,9 @@ def btc_acct_id():
 
 @fixture(scope='function')
 def order_resp_key_list():
+    """
+    List of keys in the exchange response for testing
+    """
     order_resp_key_list = ['id', 'price', 'size', 'stp', 'type', 'time_in_force',
                            'post_only', 'created_at', 'fill_fees', 'filled_size',
                            'executed_value', 'status', 'settled'
