@@ -612,24 +612,44 @@ class CoinbaseClient:
         :param order: order a dictionary passed to exchange.  May be a limit or market order type
         :return:
         """
+
+        # TODO fix order_data dict, since market and limit are slightly different best to combine them
+        order_data = {}
         response = self.make_request('POST', '/orders', order)
 
         if response is not None:
             order_data = {
                 'id': response['id'],
-                'price': float(response['price']),
-                'size': float(response['size']),
+                'product_id': response['product_id'],
+                'side': response['side'],
                 'stp': response['stp'],
                 'type': response['type'],
-                'time_in_force': response['time_in_force'],
                 'post_only': response['post_only'],
                 'created_at': response['created_at'],
                 'fill_fees': float(response['fill_fees']),
-                'filled_size': float(response['filled_size']),
                 'executed_value': float(response['executed_value']),
                 'status': response['status'],
                 'settled': response['settled']
             }
+            if 'market' in order:
+                if 'size' in order:
+                    order_data = {
+                        'funds': float(response['funds']),
+                        'size': float(response['size']),
+                    }
+                elif 'funds' in order:
+                    order_data = {
+                        'funds': float(response['funds']),
+                        'specified_funds': float(response['specified_funds']),
+                        'filled_size': response['filled_size'],
+                    }
+            elif 'limit' in order:
+                order_data = {
+                    'price': float(response['price']),
+                    'size': float(response['size']),
+                    'time_in_force': response['time_in_force'],
+                    'filled_size': float(response['filled_size']),
+                }
             return order_data
         else:
             return None
