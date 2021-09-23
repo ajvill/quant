@@ -291,24 +291,26 @@ class CoinbaseTests:
         holds = coinbase.get_holds(btc_acct_id)
         print('Test')
 
-    @mark.test1
     @mark.place_new_order
     @mark.cb_products
-    def test_place_new_order_buy_limit(self, coinbase_client, cb_limit_order_resp_key_list, btc_usd):
+    def test_place_new_order_limit(self, coinbase_client, cb_limit_order_resp_key_list,
+                                    btc_usd, cb_limit_order_from_fixture):
         """
         Testing placing a limit order.
         :param coinbase_client:
         """
+        parameters = cb_limit_order_from_fixture
+
         coinbase = coinbase_client
 
         # Exchange returns a single account with these fields
         # cancel_after is an optional field min, hour, day
         limit_order_data = {
-            'type': 'limit',
-            'side': 'buy',
+            'type': parameters['type'],
+            'side': parameters['side'],
             'product_id': btc_usd,
-            'price': 0.100,
-            'size': 0.001,
+            'price': parameters['price'],
+            'size': parameters['size'],
             'time_in_force': 'GTC',
             'cancel_after': '05,00,00',
         }
@@ -321,19 +323,22 @@ class CoinbaseTests:
 
     @mark.place_new_order
     @mark.cb_products
-    def test_place_new_order_buy_market_size(self, coinbase_client, cb_market_order_resp_key_list, btc_usd):
+    def test_place_new_order_market_size(self, coinbase_client, cb_market_order_resp_key_list,
+                                             btc_usd, cb_mkt_order_size_from_fixture):
         """
         Testing placing a limit order by desired amount in base currency
         :param coinbase_client:
         """
+        parameters = cb_mkt_order_size_from_fixture
+
         coinbase = coinbase_client
 
         # Exchange returns a single account with these fields
         market_order_data = {
-            'type': 'market',
-            'side': 'buy',
+            'type': parameters['type'],
+            'side': parameters['side'],
             'product_id': btc_usd,
-            'size': 0.001,
+            'size': parameters['size'],
         }
 
         market_order_response = coinbase.place_new_order(market_order_data)
@@ -342,21 +347,25 @@ class CoinbaseTests:
         if False not in key_test:
             assert True
 
+    @mark.test1
     @mark.place_new_order
     @mark.cb_products
-    def test_place_new_order_buy_market_funds(self, coinbase_client, cb_market_order_resp_key_list, btc_usd):
+    def test_place_new_order_market_funds(self, coinbase_client, cb_market_order_resp_key_list,
+                                              btc_usd, cb_mkt_order_funds_from_fixture):
         """
         Testing placing a limit order desired amount of quote currency to use
         :param coinbase_client:
         """
+        parameters = cb_mkt_order_funds_from_fixture
+
         coinbase = coinbase_client
 
         # Exchange returns a single account with these fields
         market_order_data = {
-            'type': 'market',
-            'side': 'buy',
+            'type': parameters['type'],
+            'side': parameters['side'],
             'product_id': btc_usd,
-            'funds': 10,
+            'funds': parameters['funds'],
         }
 
         market_order_response = coinbase.place_new_order(market_order_data)

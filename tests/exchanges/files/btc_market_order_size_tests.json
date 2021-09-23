@@ -1,0 +1,12 @@
+{
+  "1": {
+    "type": "market",
+    "side": "buy",
+    "size": 0.001
+  },
+  "2": {
+    "type": "market",
+    "side": "sell",
+    "size": 0.001
+  }
+}

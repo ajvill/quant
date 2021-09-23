@@ -1,0 +1,14 @@
+{
+  "1": {
+    "type": "limit",
+    "side": "buy",
+    "price": 0.100,
+    "size": 0.001
+  },
+  "2": {
+    "type": "limit",
+    "side": "sell",
+    "price": 100000,
+    "size": 0.002
+  }
+}
