@@ -28,25 +28,13 @@ def btc_acct_id():
 
 
 @fixture(scope='function')
-def cb_limit_order_resp_key_list():
+def cb_order_resp_key_list():
     """
     List of keys in the exchange response for testing
     """
-    order_resp_key_list = ['id', 'price', 'size', 'stp', 'type', 'time_in_force',
-                           'post_only', 'created_at', 'fill_fees', 'filled_size',
-                           'executed_value', 'status', 'settled'
-                           ]
-    return order_resp_key_list
-
-
-@fixture(scope='function')
-def cb_market_order_resp_key_list():
-    """
-    List of keys in the exchange response for testing
-    """
-    order_resp_key_list = ['id', 'size', 'product_id', 'side', 'stp', 'funds', 'type', 'post_only', 'created_at',
-                           'fill_fees', 'filled_size', 'executed_value', 'status', 'settled'
-                           ]
+    order_resp_key_list = ['id', 'price', 'size', 'product_id', 'side', 'stp', 'funds', 'type', 'post_only',
+                           'created_at', 'fill_fees', 'filled_size', 'executed_value', 'status', 'settled',
+                           'time_in_force']
 
     return order_resp_key_list
 

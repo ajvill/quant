@@ -293,7 +293,7 @@ class CoinbaseTests:
 
     @mark.place_new_order
     @mark.cb_products
-    def test_place_new_order_limit(self, coinbase_client, cb_limit_order_resp_key_list,
+    def test_place_new_order_limit(self, coinbase_client, cb_order_resp_key_list,
                                     btc_usd, cb_limit_order_from_fixture):
         """
         Testing placing a limit order.
@@ -316,14 +316,14 @@ class CoinbaseTests:
         }
 
         limit_order_response = coinbase.place_new_order(limit_order_data)
-        key_test = [x in cb_limit_order_resp_key_list for x in limit_order_response.keys()]
+        key_test = [x in cb_order_resp_key_list for x in limit_order_response.keys()]
 
         if False not in key_test:
             assert True
 
     @mark.place_new_order
     @mark.cb_products
-    def test_place_new_order_market_size(self, coinbase_client, cb_market_order_resp_key_list,
+    def test_place_new_order_market_size(self, coinbase_client, cb_order_resp_key_list,
                                              btc_usd, cb_mkt_order_size_from_fixture):
         """
         Testing placing a limit order by desired amount in base currency
@@ -342,7 +342,7 @@ class CoinbaseTests:
         }
 
         market_order_response = coinbase.place_new_order(market_order_data)
-        key_test = [x in cb_market_order_resp_key_list for x in market_order_response.keys()]
+        key_test = [x in cb_order_resp_key_list for x in market_order_response.keys()]
 
         if False not in key_test:
             assert True
@@ -350,7 +350,7 @@ class CoinbaseTests:
     @mark.test1
     @mark.place_new_order
     @mark.cb_products
-    def test_place_new_order_market_funds(self, coinbase_client, cb_market_order_resp_key_list,
+    def test_place_new_order_market_funds(self, coinbase_client, cb_order_resp_key_list,
                                               btc_usd, cb_mkt_order_funds_from_fixture):
         """
         Testing placing a limit order desired amount of quote currency to use
@@ -369,7 +369,7 @@ class CoinbaseTests:
         }
 
         market_order_response = coinbase.place_new_order(market_order_data)
-        key_test = [x in cb_market_order_resp_key_list for x in market_order_response.keys()]
+        key_test = [x in cb_order_resp_key_list for x in market_order_response.keys()]
 
         if False not in key_test:
             assert True
