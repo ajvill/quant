@@ -1,8 +1,12 @@
+import numpy as np
 import logging
 import time
+import datetime
+import re
 
 from pytest import mark
 
+logger = logging.getLogger(__name__)
 
 @mark.coinbase
 class CoinbaseTests:
@@ -291,9 +295,10 @@ class CoinbaseTests:
         holds = coinbase.get_holds(btc_acct_id)
         print('Test')
 
-    @mark.place_new_order
+    @mark.create_new_order
     @mark.cb_products
-    def test_place_new_order_limit(self, coinbase_client, cb_order_resp_key_list,
+    @mark.cb_orders
+    def test_create_new_order_limit(self, coinbase_client, cb_order_resp_key_list,
                                     btc_usd, cb_limit_order_from_fixture):
         """
         Testing placing a limit order.
@@ -315,15 +320,16 @@ class CoinbaseTests:
             'cancel_after': '05,00,00',
         }
 
-        limit_order_response = coinbase.place_new_order(limit_order_data)
+        limit_order_response = coinbase.create_new_order(limit_order_data)
         key_test = [x in cb_order_resp_key_list for x in limit_order_response.keys()]
 
         if False not in key_test:
             assert True
 
-    @mark.place_new_order
+    @mark.create_new_order
     @mark.cb_products
-    def test_place_new_order_market_size(self, coinbase_client, cb_order_resp_key_list,
+    @mark.cb_orders
+    def test_create_new_order_market_size(self, coinbase_client, cb_order_resp_key_list,
                                              btc_usd, cb_mkt_order_size_from_fixture):
         """
         Testing placing a limit order by desired amount in base currency
@@ -339,21 +345,22 @@ class CoinbaseTests:
             'side': parameters['side'],
             'product_id': btc_usd,
             'size': parameters['size'],
+            'time_in_force': 'GTC'
         }
 
-        market_order_response = coinbase.place_new_order(market_order_data)
+        market_order_response = coinbase.create_new_order(market_order_data)
         key_test = [x in cb_order_resp_key_list for x in market_order_response.keys()]
 
         if False not in key_test:
             assert True
 
-    @mark.test1
-    @mark.place_new_order
+    @mark.create_new_order
     @mark.cb_products
-    def test_place_new_order_market_funds(self, coinbase_client, cb_order_resp_key_list,
+    @mark.cb_orders
+    def test_create_new_order_market_funds(self, coinbase_client, cb_order_resp_key_list,
                                               btc_usd, cb_mkt_order_funds_from_fixture):
         """
-        Testing placing a limit order desired amount of quote currency to use
+        Testing create_new_order market order using funds attribute.
         :param coinbase_client:
         """
         parameters = cb_mkt_order_funds_from_fixture
@@ -366,10 +373,193 @@ class CoinbaseTests:
             'side': parameters['side'],
             'product_id': btc_usd,
             'funds': parameters['funds'],
+            'time_in_force': 'GTC'
         }
 
-        market_order_response = coinbase.place_new_order(market_order_data)
+        market_order_response = coinbase.create_new_order(market_order_data)
         key_test = [x in cb_order_resp_key_list for x in market_order_response.keys()]
 
         if False not in key_test:
             assert True
+
+    @mark.create_new_order
+    @mark.cb_products
+    @mark.cb_orders
+    def test_create_new_order_stop_loss(self, coinbase_client, cb_order_resp_key_list,
+                                          btc_usd, cb_stop_order_from_fixture):
+        """
+        Testing placing a limit order desired amount of quote currency to use
+        :param coinbase_client:
+        """
+        parameters = cb_stop_order_from_fixture
+
+        coinbase = coinbase_client
+
+        # Exchange returns a single account with these fields
+        stop_order_data = {
+            'type': parameters['type'],
+            'side': parameters['side'],
+            'product_id': btc_usd,
+            'price': parameters['price'],
+            'size': parameters['size'],
+            'stop': parameters['stop'],
+            'stop_price': parameters['stop_price'],
+            'time_in_force': 'GTC'
+        }
+
+        stop_order_response = coinbase.create_new_order(stop_order_data)
+        key_test = [x in cb_order_resp_key_list for x in stop_order_response.keys()]
+
+        if False not in key_test:
+            assert True
+
+    @mark.cb_products
+    @mark.cb_orders
+    def test_get_all_fills(self, coinbase_client, btc_usd, cb_get_all_fills_from_fixture):
+        """
+        Testing get_all_fills functionality.  Gets a list of fills.  A fill on a specified order
+        """
+        parameters = cb_get_all_fills_from_fixture
+
+        if len(parameters) == 1:
+            fills_params = {
+                'product_id':   btc_usd,
+                'limit':    parameters['limit']
+            }
+        else:
+            datetime_before_obj = datetime.datetime.strptime(parameters['before'], '%b %d, %Y')
+            datetime_after_obj = datetime.datetime.strptime(parameters['after'], '%b %d, %Y')
+            fills_params = {
+                'product_id':   btc_usd,
+                'limit':    parameters['limit'],
+                'before':   np.int64(datetime_before_obj.timestamp()),
+                'after':    np.int64(datetime_after_obj.timestamp())
+            }
+
+        coinbase = coinbase_client
+
+        fills_list = coinbase.get_all_fills(fills_params)
+
+        if fills_list is not None:
+            assert len(fills_list) == fills_params['limit']
+        else:
+            assert False
+
+    @mark.cb_products
+    @mark.cb_orders
+    def test_get_all_orders(self, coinbase_client, cb_get_all_orders_from_fixture):
+        """
+        Testing get_all_orders.  Gets a list of all open orders on the exchanges.
+        """
+
+        parameters = cb_get_all_orders_from_fixture
+
+        coinbase = coinbase_client
+
+        open_orders_list = coinbase.get_all_orders(parameters)
+
+        if open_orders_list is not None:
+            for order in open_orders_list:
+                logger.info('Test status during run = {}'.format(parameters['status']))
+                assert order['status'] == parameters['status']
+        else:
+            assert False
+
+    @mark.cb_products
+    @mark.cb_orders
+    def test_cancel_all_orders(self, coinbase_client, btc_usd, cb_limit_order_from_fixture, cb_stop_order_from_fixture):
+        """
+        Testing canceling_all_orders which cancels any open orders on the exchange.
+        """
+        limit_order_parameters = cb_limit_order_from_fixture
+        limit_order_data = {
+            'type': limit_order_parameters['type'],
+            'side': limit_order_parameters['side'],
+            'product_id': btc_usd,
+            'price': limit_order_parameters['price'],
+            'size': limit_order_parameters['size'],
+            'time_in_force': 'GTC',
+            'cancel_after': '05,00,00',
+        }
+
+        stoploss_order_parameters = cb_stop_order_from_fixture
+        stop_order_data = {
+            'type': stoploss_order_parameters['type'],
+            'side': stoploss_order_parameters['side'],
+            'product_id': btc_usd,
+            'price': stoploss_order_parameters['price'],
+            'size': stoploss_order_parameters['size'],
+            'stop': stoploss_order_parameters['stop'],
+            'stop_price': stoploss_order_parameters['stop_price'],
+            'time_in_force': 'GTC'
+        }
+
+        coinbase = coinbase_client
+
+        limit_order_response = coinbase.create_new_order(limit_order_data)
+        stop_order_response = coinbase.create_new_order(stop_order_data)
+
+        cancel_orders_list = coinbase.cancel_all_orders()
+
+        if cancel_orders_list is not None:
+            for item in cancel_orders_list:
+                pattern = re.compile(r'\w+-\w+-\w+-\w+')
+                assert re.search(pattern, item)
+        else:
+            assert False
+
+    @mark.cb_products
+    @mark.cb_orders
+    def test_get_single_order(self, coinbase_client, btc_usd, cb_limit_order_from_fixture):
+        limit_order_parameters = cb_limit_order_from_fixture
+        limit_order_data = {
+            'type': limit_order_parameters['type'],
+            'side': limit_order_parameters['side'],
+            'product_id': btc_usd,
+            'price': limit_order_parameters['price'],
+            'size': limit_order_parameters['size'],
+            'time_in_force': 'GTC',
+            'cancel_after': '05,00,00',
+        }
+
+        coinbase = coinbase_client
+
+        # first create some tests in case there are no open tests
+        limit_order_response = coinbase.create_new_order(limit_order_data)
+
+        order_rsp = coinbase.get_single_order(limit_order_response['id'])
+
+        if order_rsp is not None:
+            assert order_rsp['id'] == limit_order_response['id']
+
+        # clean up all open orders
+        coinbase.cancel_all_orders()
+
+    @mark.test1
+    @mark.cb_products
+    @mark.cb_orders
+    def test_cancel_an_order(self, coinbase_client, btc_usd, cb_limit_order_from_fixture):
+        limit_order_parameters = cb_limit_order_from_fixture
+        limit_order_data = {
+            'type': limit_order_parameters['type'],
+            'side': limit_order_parameters['side'],
+            'product_id': btc_usd,
+            'price': limit_order_parameters['price'],
+            'size': limit_order_parameters['size'],
+            'time_in_force': 'GTC',
+            'cancel_after': '05,00,00',
+        }
+
+        coinbase = coinbase_client
+
+        # first create a test in case there are no open tests and use it's id
+        limit_order_response = coinbase.create_new_order(limit_order_data)
+        # cancel the new test created using the id from last line
+        cancel_order_response = coinbase.cancel_an_order(limit_order_response['id'])
+
+        if cancel_order_response is not None:
+            # attempt to grab the last limit order test already created but should be gone by now
+            single_order_rsp = coinbase.get_single_order(limit_order_response['id'])
+            if not bool(single_order_rsp):
+                # if created limit test is gone then pass test
+                assert True

@@ -13,7 +13,6 @@ ibapi
 
 # files
 *.csv
-*.json
 *.txt
 
 # python directory

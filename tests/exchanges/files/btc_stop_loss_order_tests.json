@@ -1,0 +1,18 @@
+{
+  "1": {
+    "type": "limit",
+    "side": "sell",
+    "price": 30001.00,
+    "size": 0.001,
+    "stop": "loss",
+    "stop_price": 30000.00
+  },
+  "2": {
+    "type": "limit",
+    "side": "sell",
+    "price": 90050.00,
+    "size": 0.001,
+    "stop": "entry",
+    "stop_price": 90000.00
+  }
+}

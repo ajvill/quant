@@ -59,7 +59,7 @@ class CoinbaseClient:
 
         return account_history
 
-    def cancel_all(self):
+    def cancel_all_orders(self):
         """
         With best effort, cancel all open orders from the profile that the API key belongs to.
         :return: List of ids of the canceled orders
@@ -100,7 +100,7 @@ class CoinbaseClient:
 
         return account_data
 
-    def get_an_order(self, order_id):
+    def get_single_order(self, order_id):
         """
         Get a single order by order id from the profile that the API key belongs to.
         :param order_id:
@@ -497,45 +497,51 @@ class CoinbaseClient:
 
         return account_list
 
-    def list_fills(self, params=None):
+    def get_all_fills(self, params=None):
         """
         Get a list of recent fills of the API key's profile.
         :param params:
-        :return:
+        :return: A list of dictionaries containing order fill information based on product_id or order_id
         """
         response = self.make_request('GET', '/fills', params)
-        return response
 
-    def list_orders(self):
+        if response is not None:
+            return response
+        else:
+            return None
+
+    def get_all_orders(self, params):
         """
         List your current open orders from the profile that the API key belongs to.
         :return:
         """
-        params = {'status': 'open'}
-        exchange_response = self.make_request('GET', '/orders', params)
+        response = self.make_request('GET', '/orders', params)
 
         orders_list = []
-        for order in exchange_response:
-            data = {
-                'id': order['id'],
-                'price': float(order['price']),
-                'size': float(order['size']),
-                'product_id': order['product_id'],
-                'profile_id': order['profile_id'],
-                'side': order['side'],
-                'type': order['type'],
-                'time_in_force': order['time_in_force'],
-                'post_only': order['post_only'],
-                'created_at': order['created_at'],
-                'fill_fees': float(order['fill_fees']),
-                'filled_size': float(order['filled_size']),
-                'executed_value': float(order['executed_value']),
-                'status': order['status'],
-                'settled': order['settled']
-            }
-            orders_list.append(data)
 
-        return orders_list
+        if response is not None:
+            for order in response:
+                data = {
+                    'id': order['id'],
+                    'price': float(order['price']),
+                    'size': float(order['size']),
+                    'product_id': order['product_id'],
+                    'profile_id': order['profile_id'],
+                    'side': order['side'],
+                    'type': order['type'],
+                    'time_in_force': order['time_in_force'],
+                    'post_only': order['post_only'],
+                    'created_at': order['created_at'],
+                    'fill_fees': float(order['fill_fees']),
+                    'filled_size': float(order['filled_size']),
+                    'executed_value': float(order['executed_value']),
+                    'status': order['status'],
+                    'settled': order['settled']
+                }
+                orders_list.append(data)
+            return orders_list
+        else:
+            return None
 
     def make_product_dict(self, product):
 
@@ -601,7 +607,7 @@ class CoinbaseClient:
                          method, endpoint, response.status_code, response.text)
             return None
 
-    def place_new_order(self, order):
+    def create_new_order(self, order):
         """
         You can place two types of orders: limit and market. Orders can only be placed if your account has sufficient
         funds. Each profile can have a maximum of 500 open orders on a product. Once reached, the profile will not be
