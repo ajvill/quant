@@ -29,13 +29,10 @@ class CoinbaseClient:
         #t = Thread(target=self.start_ws)
         #t.start()
 
-    def get_account_history(self, acct_id):
+    def get_single_account_ledger(self, acct_id):
         """
-        List account activity of the API key's profile. Account activity either increases or decreases your account
-        balance. Items are paginated and sorted latest first. See the Pagination section for retrieving additional
-        entries after the first page.
-        :param acct_id:
-        :return:
+        Lists ledger activity for an account. This includes anything that would affect the accounts balance -
+        transfers, trades, fees, etc.
         """
         request = self.make_request('GET', '/accounts/{}/ledger'.format(acct_id), None)
 
@@ -43,7 +40,31 @@ class CoinbaseClient:
 
         if request is not None:
             for hist in request:
-                print(hist)
+                data = {
+                    'id': hist['id'],
+                    'amount': float(hist['amount']),
+                    'balance': float(hist['balance']),
+                    'created_at': hist['created_at'],
+                    'type': hist['type'],
+                    'details': {'order_id': hist['details']['order_id'],
+                                'product_id': hist['details']['product_id'],
+                                'trade_id': hist['details']['trade_id']
+                                }
+                }
+                account_history.append(data)
+
+        return account_history
+
+    def get_single_account_transfers(self, acct_id):
+        """
+        Lists past withdrawals and deposits for an account.
+        """
+        request = self.make_request('GET', '/accounts/{}/transfers'.format(acct_id), None)
+
+        account_history = []
+
+        if request is not None:
+            for hist in request:
                 data = {
                     'id': hist['id'],
                     'amount': float(hist['amount']),
@@ -78,7 +99,7 @@ class CoinbaseClient:
 
         return exchange_response
 
-    def get_an_account(self, acct_id):
+    def get_single_account_id(self, acct_id):
         """
         Information for a single account. Use this endpoint when you know the account_id.
         API key must belong to the same profile as the account.
@@ -87,18 +108,21 @@ class CoinbaseClient:
         """
         response = self.make_request('GET', '/accounts/{}'.format(acct_id), None)
 
-        account_data = dict()
+        single_account_id_data = {}
 
         if response is not None:
-            account_data = {
+            single_account_id_data = {
                 'id': response['id'],
+                'currency': response['currency'],
                 'balance': float(response['balance']),
-                'hold': float(response['hold']),
                 'available': float(response['available']),
-                'currency': response['currency']
+                'hold': float(response['hold']),
+                'profile_id': response['profile_id'],
+                'trading_enabled': response['trading_enabled']
             }
-
-        return account_data
+            return single_account_id_data
+        else:
+            return None
 
     def get_single_order(self, order_id):
         """
@@ -155,7 +179,7 @@ class CoinbaseClient:
         Gets a list of balances of accounts with a balance greater than zero.
         :return:
         """
-        accounts_data = self.list_accounts()
+        accounts_data = self.get_all_accounts()
 
         balance_data = []
 
@@ -311,17 +335,14 @@ class CoinbaseClient:
 
         return candles
 
-    def get_holds(self, acct_id):
+    def get_single_account_holds(self, acct_id, params=None):
         """
         List holds of an account that belong to the same profile as the API key.
         Holds are placed on an account for any active orders or pending withdraw requests. As an order is filled,
         the hold amount is updated. If an order is canceled, any remaining hold is removed. For a withdraw, once
         it is completed, the hold is removed.
-
-        :param acct_id:
-        :return holds_data:
         """
-        response = self.make_request('GET', '/accounts/{}/holds'.format(acct_id), None)
+        response = self.make_request('GET', '/accounts/{}/holds'.format(acct_id), params)
 
         holds_data = []
 
@@ -329,10 +350,8 @@ class CoinbaseClient:
             for hold in response:
                 data = {
                     'id': response['id'],
-                    'account_id': response['account_id'],
                     'created_at': response['created_at'],
                     'updated_at': response['updated_at'],
-                    'amount': float(response['amount']),
                     'type': response['type'],
                     'ref': response['ref']
                 }
@@ -473,7 +492,7 @@ class CoinbaseClient:
 
         return stats
 
-    def list_accounts(self):
+    def get_all_accounts(self):
         """
         Get a list of trading accounts from the profile of the API key.
         :return:
@@ -591,12 +610,17 @@ class CoinbaseClient:
 
     def make_request(self, method, endpoint, data):
         # Coinbase doesn't like mixing str and int so cast data an str
+        headers = {'Accept': 'application/json'}
         if method == 'DELETE':
-            response = requests.delete(self.base_url + endpoint, params=str(data), auth=self.auth)
+            response = requests.delete(self.base_url + endpoint, headers=headers, params=str(data), auth=self.auth)
         elif method == 'GET':
-            response = requests.get(self.base_url + endpoint, params=data, auth=self.auth)
+            response = requests.get(self.base_url + endpoint, headers=headers, params=data, auth=self.auth)
         elif method == 'POST':
-            response = requests.post(self.base_url + endpoint, json=data, auth=self.auth)
+            headers = {
+                'Accept': 'application/json',
+                'Content-type': 'application/json'
+            }
+            response = requests.post(self.base_url + endpoint, headers=headers, json=data, auth=self.auth)
         else:
             raise ValueError()
 

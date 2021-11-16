@@ -192,8 +192,9 @@ class CoinbaseTests:
         if len(stats) == 2:
             assert True
 
+    @mark.cb_accounts
     @mark.cb_products
-    def test_list_accounts(self, coinbase_client):
+    def test_get_all_accounts(self, coinbase_client):
         """
         Calls for a list of accounts from the exchange.  Then check the account keys fields of each account.
         Fail test if field does not match
@@ -201,7 +202,7 @@ class CoinbaseTests:
         :param coinbase_client:
         """
         coinbase = coinbase_client
-        accounts_list = coinbase.list_accounts()
+        accounts_list = coinbase.get_all_accounts()
         account_key_list = ['id', 'currency', 'balance', 'available', 'hold', 'profile_id', 'trading_enabled']
 
         for account in accounts_list:
@@ -212,30 +213,8 @@ class CoinbaseTests:
             else:
                 assert True
 
-    @mark.cb_products
-    def test_get_an_account(self, coinbase_client):
-        """
-        Grab a list of accounts from the exchange.  Then uses each accounts id to pass to get_an_account.
-        Next we check each account uses the account_key_list field
-
-        :param coinbase_client:
-        """
-        coinbase = coinbase_client
-
-        # Exchange returns a single account with these fields
-        account_key_list = ['id', 'balance', 'hold', 'available', 'currency']
-
-        accounts_list = coinbase.list_accounts()
-        for acct_dict in accounts_list:
-            account = coinbase.get_an_account(acct_dict['id'])
-            key_test = [x in account_key_list for x in account.keys()]
-
-            if False in key_test:
-                assert False
-            else:
-                assert True
-
     @mark.skip(reason='Hits a KeyError: "order_id" after several successful account_history fetches.  Fixing later')
+    @mark.test1
     @mark.cb_products
     def test_get_account_history(self, coinbase_client):
         """
@@ -259,9 +238,9 @@ class CoinbaseTests:
                         }
         }
 
-        accounts_list = coinbase.list_accounts()
+        accounts_list = coinbase.get_all_accounts()
         for acct_dict in accounts_list:
-            account_history = coinbase.get_account_history(acct_dict['id'])
+            account_history = coinbase.get_single_account_ledger(acct_dict['id'])
             if account_history is not None:
                 if len(account_history) > 0:
                     for acct_hist in account_history:
@@ -275,25 +254,57 @@ class CoinbaseTests:
             else:
                 assert False
 
-    @mark.skip(reason='Revisit when making order tests')
+    @mark.cb_accounts
     @mark.cb_products
-    def test_get_holds(self, coinbase_client, btc_acct_id):
+    def test_get_single_account_id(self, coinbase_client, btc_acct_id):
         """
         Grab a list of accounts from the exchange.  Then uses each accounts id to pass to get_an_account.
         Next we check each account uses the account_key_list field
 
         :param coinbase_client:
         """
+        account_id_list = ['id', 'currency', 'balance', 'available', 'hold', 'profile_id', 'trading_enabled']
         coinbase = coinbase_client
-        """
-        account_list = coinbase.list_accounts()
+        single_acct_id = coinbase.get_single_account_id(btc_acct_id)
 
-        for account in account_list:
-            holds = coinbase.get_holds(account['id'])
-            print('Test')
+        key_test = [x in account_id_list for x in single_acct_id.keys()]
+        if False in key_test:
+            assert False
+        else:
+            assert True
+
+    @mark.cb_accounts
+    @mark.cb_products
+    def test_get_single_account_holds(self, coinbase_client, btc_acct_id):
         """
-        holds = coinbase.get_holds(btc_acct_id)
-        print('Test')
+        Grab a list of accounts from the exchange.  Then uses each accounts id to pass to get_an_account.
+        Next we check each account uses the account_key_list field
+
+        :param coinbase_client:
+        """
+        params = {'limit': 100}
+        coinbase = coinbase_client
+        single_acct_holds = coinbase.get_single_account_holds(btc_acct_id, params)
+
+        if single_acct_holds is not None:
+            assert len(single_acct_holds) != 0
+
+    @mark.test1
+    @mark.cb_accounts
+    @mark.cb_products
+    def test_get_single_account_transfers(self, coinbase_client, btc_acct_id):
+        """
+        Grab a list of accounts from the exchange.  Then uses each accounts id to pass to get_an_account.
+        Next we check each account uses the account_key_list field
+
+        :param coinbase_client:
+        """
+        params = {'limit': 100}
+        coinbase = coinbase_client
+        single_acct_transfers = coinbase.get_single_account_transfers(btc_acct_id)
+
+        if single_acct_transfers is not None:
+            assert len(single_acct_transfers) != 0
 
     @mark.create_new_order
     @mark.cb_products
@@ -535,7 +546,6 @@ class CoinbaseTests:
         # clean up all open orders
         coinbase.cancel_all_orders()
 
-    @mark.test1
     @mark.cb_products
     @mark.cb_orders
     def test_cancel_an_order(self, coinbase_client, btc_usd, cb_limit_order_from_fixture):
