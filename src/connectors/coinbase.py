@@ -312,6 +312,24 @@ class CoinbaseClient:
 
         return currency
 
+    def get_fees(self):
+        """
+        Get fees rates and 30 days trailing volume.
+        """
+        response = self.make_request('GET', '/fees', None)
+
+        fees_data = {}
+
+        if response is not None:
+            fees_data = {
+                'taker_fee_rate': float(response['taker_fee_rate']),
+                'maker_fee_rate': float(response['maker_fee_rate']),
+                'usd_volume': float(response['usd_volume'])
+            }
+            return fees_data
+        else:
+            return None
+
     def get_historic_rates(self, symbol, interval):
         """
         Historic rates for a product. Rates are returned in grouped buckets based on requested granularity.

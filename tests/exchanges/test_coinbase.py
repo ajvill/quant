@@ -143,6 +143,21 @@ class CoinbaseTests:
         else:
             assert False
 
+    @mark.cb_fees
+    def test_get_fees(self, coinbase_client):
+        coinbase = coinbase_client
+        fee_data = coinbase.get_fees()
+        fees_list = ['taker_fee_rate', 'maker_fee_rate', 'usd_volume']
+
+        if fee_data is not None:
+            keys_test = [x in fees_list for x in fee_data.keys()]
+            if False in keys_test:
+                assert False
+            else:
+                assert True
+        else:
+            assert False
+
     @mark.cb_products
     def test_get_historic_rates(self, coinbase_client, btc_usd):
         coinbase = coinbase_client
