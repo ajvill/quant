@@ -12,6 +12,7 @@ btc_mkt_order_funds_data = 'files/btc_market_order_funds_tests.json'
 btc_stop_order_data = 'files/btc_stop_loss_order_tests.json'
 btc_get_all_fills_data = 'files/btc_get_all_fills_tests.json'
 get_all_orders_data = 'files/get_all_orders_tests.json'
+currency_id_data = 'files/currency_ids.json'
 
 
 def load_test_data(path):
@@ -74,5 +75,11 @@ def cb_get_all_fills_from_fixture(request):
 
 @fixture(params=load_test_data(get_all_orders_data).values())
 def cb_get_all_orders_from_fixture(request):
+    data = request.param
+    return data
+
+
+@fixture(params=load_test_data(currency_id_data).values())
+def cb_currency_ids_from_fixture(request):
     data = request.param
     return data

@@ -206,13 +206,25 @@ class CoinbaseTests:
 
         stats = coinbase.get_24hr_stats(btc_usd)
 
+    @mark.cb_currencies
     @mark.cb_products
-    def test_get_currencies(self, coinbase_client):
+    def test_get_all_currencies(self, coinbase_client):
         coinbase = coinbase_client
+        currencies = coinbase.get_all_currencies()
 
-        stats = coinbase.get_currencies()
+        if isinstance(currencies, list) and len(currencies) > 0:
+            assert True
 
-        if len(stats) > 0:
+    @mark.cb_currencies
+    @mark.cb_products
+    def test_get_a_currency(self, coinbase_client, cb_currency_ids_from_fixture):
+
+        parameters = cb_currency_ids_from_fixture
+        coinbase = coinbase_client
+        currency = coinbase.get_a_currency(parameters['id'])
+
+        if isinstance(currency, dict) and len(currency) > 0:
+            logger.info('{} check passed'.format(currency['id']))
             assert True
 
     @mark.cb_products

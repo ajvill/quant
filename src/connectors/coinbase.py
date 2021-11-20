@@ -6,7 +6,6 @@ import logging, os
 import websocket
 import ssl
 
-
 logger = logging.getLogger()
 
 
@@ -26,8 +25,8 @@ class CoinbaseClient:
         self.prices = dict()
         self.id = 1
         self.ws = None
-        #t = Thread(target=self.start_ws)
-        #t.start()
+        # t = Thread(target=self.start_ws)
+        # t.start()
 
     def get_single_account_ledger(self, acct_id):
         """
@@ -140,14 +139,14 @@ class CoinbaseClient:
                 'size': float(response['size']),
                 'product_id': response['product_id'],
                 'side': response['side'],
-                #'stp': exchange_info['stp'],
-                #'funds': float(exchange_info['funds']),
-                #'specified_funds': float(exchange_info['specified_funds']),
+                # 'stp': exchange_info['stp'],
+                # 'funds': float(exchange_info['funds']),
+                # 'specified_funds': float(exchange_info['specified_funds']),
                 'type': response['type'],
                 'post_only': response['post_only'],
                 'created_at': response['created_at'],
-                #'done_at': exchange_info['done_at'],
-                #'done_reason': exchange_info['done_reason'],
+                # 'done_at': exchange_info['done_at'],
+                # 'done_reason': exchange_info['done_reason'],
                 'fill_fees': float(response['fill_fees']),
                 'filled_size': float(response['filled_size']),
                 'executed_value': float(response['executed_value']),
@@ -233,7 +232,7 @@ class CoinbaseClient:
         """
         data = dict()
         data['id'] = symbol
-        #ob_data = self.make_request('GET', '/products/{}/ticker'.format(data['id']), None)
+        # ob_data = self.make_request('GET', '/products/{}/ticker'.format(data['id']), None)
         ob_data = self.get_product_ticker(symbol)
 
         # TODO complete remaining ob_data is a dict with keys: trade_id, price, size, time, bid, ask, volume
@@ -262,55 +261,77 @@ class CoinbaseClient:
 
         return contracts
 
-    def get_currencies(self):
+    def convert_currency(self, currency):
         """
-        List known currencies.
-        :return currency_data:
+        Helper method for get currency methods used to response dictionary values from exchange to desired formats
+        """
+
+        currency_data = {
+            'id': currency['id'],
+            'name': currency['name'],
+            'min_size': float(currency['min_size']),
+            'status': currency['status'],
+            'message': currency['message'],
+            'max_precision': float(currency['max_precision']),
+            'convertible_to': currency['convertible_to'],
+            'details': {
+                'type': currency['details']['type'] \
+                    if currency['details']['type'] is not None else '',
+                'symbol': currency['details']['symbol'] \
+                    if currency['details']['symbol'] is not None else '',
+                'network_confirmations': int(currency['details']['network_confirmations']) \
+                    if currency['details']['network_confirmations'] is not None else '',
+                'sort_order': int(currency['details']['sort_order']) \
+                    if currency['details']['sort_order'] is not None else '',
+                'crypto_address_link': currency['details']['crypto_address_link'] \
+                    if currency['details']['crypto_address_link'] is not None else '',
+                'crypto_transaction_link': currency['details']['crypto_transaction_link'] \
+                    if currency['details']['crypto_transaction_link'] is not None else '',
+                'push_payment_methods': currency['details']['push_payment_methods'] \
+                    if currency['details']['push_payment_methods'] is not None else '',
+                'group_types': currency['details']['group_types'] \
+                    if currency['details']['group_types'] is not None else '',
+                'display_name': currency['details']['display_name'] \
+                    if currency['details']['display_name'] is not None else '',
+                'processing_time_seconds': int(currency['details']['processing_time_seconds']) \
+                    if currency['details']['processing_time_seconds'] is not None else '',
+                'min_withdrawal_amount': float(currency['details']['min_withdrawal_amount']) \
+                    if currency['details']['min_withdrawal_amount'] is not None else '',
+                'max_withdrawal_amount': int(currency['details']['max_withdrawal_amount']) \
+                    if currency['details']['max_withdrawal_amount'] is not None else ''
+            }
+        }
+
+        return currency_data
+
+    def get_all_currencies(self):
+        """
+        Gets a list of all known currencies.
+        Note: Not all currencies may be currently in use for trading.
         """
 
         response = self.make_request('GET', '/currencies', None)
 
-        currency_data = []
+        currencies_data = []
 
         if response is not None:
             for currency in response:
-                data = {
-                    'id': currency['id'],
-                    'name': currency['name'],
-                    'min_size': float(currency['min_size']),
-                    'status': currency['status'],
-                    'message': currency['message'],
-                    'max_precision': float(currency['max_precision']),
-                    'convertible_to': currency['convertible_to'],
-                    'details': {
-                        'type': currency['details']['type'],
-                        'symbol': currency['details']['symbol'],
-                        'network_confirmations': int(currency['details']['network_confirmations']),
-                        'sort_order': int(currency['details']['sort_order']),
-                        'crypto_address_link': currency['details']['crypto_address_link'],
-                        'crypto_transaction_link': currency['details']['crypto_transaction_link'],
-                        'push_payment_methods': currency['details']['push_payment_methods'],
-                        'group_types': currency['details']['group_types'],
-                        'display_name': currency['details']['display_name'],
-                        'processing_time_seconds': int(currency['details']['processing_time_seconds']),
-                        'min_withdrawal_amount': float(currency['details']['min_withdrawal_amount']),
-                        'max_withdrawal_amount': int(currency['details']['max_withdrawal_amount'])
-                    }
-                }
-                currency_data.append(data)
+                currencies_data.append(self.convert_currency(currency))
+            return currencies_data
+        else:
+            return None
 
-        return currency_data
-
-    def get_currency(self, symbol):
+    def get_a_currency(self, currency_id):
         """
-        List the currency for specified id.
-        :param symbol:
-        :return currency:
+        Gets a single currency by id.
         """
         # TODO same as with get_currencies method
-        currency = self.make_request('GET', '/currencies/{}'.format(symbol))
+        currency = self.make_request('GET', '/currencies/{}'.format(currency_id), None)
+        if currency is not None:
+            return self.convert_currency(currency)
+        else:
+            return None
 
-        return currency
 
     def get_fees(self):
         """
@@ -724,12 +745,12 @@ class CoinbaseClient:
 
     def start_ws(self):
         self.ws = websocket.WebSocketApp(self.wss_url,
-                                    on_open=self.on_open,
-                                    on_close=self.on_close,
-                                    on_error=self.on_error,
-                                    on_message=self.on_message)
+                                         on_open=self.on_open,
+                                         on_close=self.on_close,
+                                         on_error=self.on_error,
+                                         on_message=self.on_message)
         self.ws.run_forever()
-        #self.ws.run_forever(sslopt={'cert_reqs': ssl.CERT_NONE})
+        # self.ws.run_forever(sslopt={'cert_reqs': ssl.CERT_NONE})
 
     def on_open(self, ws):
         logger.info('Coinbase websocket connection opened')
