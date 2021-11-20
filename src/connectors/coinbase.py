@@ -461,6 +461,26 @@ class CoinbaseClient:
 
         return data
 
+    def get_signed_prices(self):
+        """
+        Get cryptographically signed prices ready to be posted on-chain using Compound's Open Oracle smart contract.
+        """
+        response = self.make_request('GET', '/oracle', None)
+
+        data = {}
+
+        if response is not None:
+            data = {
+                'timestamp': response['timestamp'],
+                'messages': response['messages'],
+                'signatures': response['signatures'],
+                'prices': response['prices']
+            }
+        else:
+            return None
+
+        return data
+
     def get_trades(self, symbol):
         """
         List the latest trades for a product.

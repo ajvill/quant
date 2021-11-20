@@ -49,6 +49,23 @@ class CoinbaseTests:
         else:
             assert False
 
+    @mark.cb_price_oracle
+    @mark.cb_products
+    def test_get_signed_prices(self, coinbase_client):
+        coinbase = coinbase_client
+        prices = coinbase.get_signed_prices()
+
+        prices_list = ['timestamp', 'messages', 'signatures', 'prices']
+
+        if prices is not None:
+            price_key_test = [x in prices_list for x in prices.keys()]
+            if False in price_key_test:
+                assert False
+            else:
+                assert True
+        else:
+            assert False
+
     @mark.cb_products
     def test_get_contracts(self, coinbase_client):
         coinbase = coinbase_client
