@@ -261,7 +261,21 @@ class CoinbaseClient:
 
         return contracts
 
-    def convert_currency(self, currency):
+    def convert_currency(self, params):
+        """
+        Converts funds from from currency to to currency.
+        Funds are converted on the from account in the profile_id profile.
+        """
+        response = self.make_request('POST', '/conversions', params)
+
+        data = {}
+
+        if response is not None:
+            return data
+        else:
+            return None
+
+    def _convert_currency_dict(self, currency):
         """
         Helper method for get currency methods used to response dictionary values from exchange to desired formats
         """
@@ -316,7 +330,7 @@ class CoinbaseClient:
 
         if response is not None:
             for currency in response:
-                currencies_data.append(self.convert_currency(currency))
+                currencies_data.append(self._convert_currency_dict(currency))
             return currencies_data
         else:
             return None
@@ -328,7 +342,7 @@ class CoinbaseClient:
         # TODO same as with get_currencies method
         currency = self.make_request('GET', '/currencies/{}'.format(currency_id), None)
         if currency is not None:
-            return self.convert_currency(currency)
+            return self._convert_currency_dict(currency)
         else:
             return None
 

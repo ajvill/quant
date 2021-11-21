@@ -19,6 +19,23 @@ class CoinbaseTests:
         else:
             assert False
 
+    @mark.cb_conversions
+    @mark.cb_products
+    def test_convert_currency(self, coinbase_client):
+        coinbase = coinbase_client
+
+        params = {
+            #'profile_id': '',
+            'from': 'acc97eb6-f45b-4240-a7c2-4d1f2395c8eb',
+            'to': '19a3e0bf-e469-48ad-b201-70a8f8d6a23b',
+            'amount': '100',
+            #'nonce': ''
+        }
+
+        conversion = coinbase.convert_currency(params)
+
+        assert True
+
     @mark.cb_products
     def test_get_products(self, coinbase_client):
         coinbase = coinbase_client
