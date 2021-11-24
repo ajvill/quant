@@ -645,6 +645,19 @@ class CoinbaseClient:
 
         return trade_data
 
+    def get_user_exchange_limits(self, params):
+        """
+        Gets exchange limits information for a single user.
+        """
+        response = self.make_request('GET', '/users/{}/exchange-limits'.format(params['user_id']), None)
+
+        exchange_limit_data = {}
+
+        if response is not None:
+            return exchange_limit_data
+
+        return None
+
     def gen_crypto_address(self, params=None):
         """
         Generates a one-time crypto address for depositing crypto.

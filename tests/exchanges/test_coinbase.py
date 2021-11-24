@@ -539,6 +539,19 @@ class CoinbaseTests:
         if address_info is not None:
             assert True
 
+    @mark.skip(reason='get_user_exchange_limits(), not fully implemented')
+    @mark.cb_user_exchange_limits
+    @mark.cb_products
+    def test_get_user_exchange_limits(self, coinbase_client):
+        path_params = {
+            'user_id': '1234'
+        }
+        coinbase = coinbase_client
+        user_exchange_limits_data = coinbase.get_user_exchange_limits(path_params)
+
+        if user_exchange_limits_data is not None:
+            assert True
+
     @mark.skip(reason='get_all_reports(), returns an empty list status code 200, revisit')
     @mark.cb_reports
     @mark.cb_products
