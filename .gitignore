@@ -1,12 +1,15 @@
-# directories
-.idea/
 .ipynb_checkpoints/
+# IDEs
+.idea/
+
+# Internal directories
 accounts/
-etfs/
+backup/
 csvs_for_testing_only/
+etfs/
+test_logs/
 txt_for_testing_only/
 venv/
-backup/
 
 # symbolic links
 ibapi

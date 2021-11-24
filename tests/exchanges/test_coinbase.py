@@ -1,4 +1,5 @@
 import numpy as np
+import json
 import logging
 import time
 import datetime
@@ -8,9 +9,9 @@ from pytest import mark
 
 logger = logging.getLogger(__name__)
 
-@mark.coinbase
-class CoinbaseTests:
 
+@mark.usefixtures('coinbase_client')
+class CoinbaseTests:
     @mark.exchanges
     def test_coinbase_connection(self, coinbase_client):
         coinbase = coinbase_client
@@ -26,9 +27,9 @@ class CoinbaseTests:
 
         params = {
             #'profile_id': '',
-            'from': 'acc97eb6-f45b-4240-a7c2-4d1f2395c8eb',
-            'to': '19a3e0bf-e469-48ad-b201-70a8f8d6a23b',
-            'amount': '100',
+            'from': '5dcc143c-fb96-4f72-aebf-a165e3d29b53',
+            'to': '6100247f-90fc-4335-ac17-d99839f0c909',
+            'amount': '11',
             #'nonce': ''
         }
 
@@ -52,6 +53,108 @@ class CoinbaseTests:
                     break
         else:
             assert False
+
+    @mark.test1
+    @mark.cb_profiles
+    @mark.cb_products
+    def test_get_profiles(self, coinbase_client):
+        coinbase = coinbase_client
+        profiles = coinbase.get_profiles()
+
+        profiles_keys_list = ['id', 'user_id', 'name', 'active', 'is_default', 'has_margin', 'created_at']
+
+        if profiles is not None:
+            for profile in profiles:
+                keys_test = [x in profiles_keys_list for x in profile.keys()]
+                logger.info('test_get_profiles, keys_test for profile {}, is {}'.format(profile['id'], keys_test))
+                if False in keys_test:
+                    assert False
+                else:
+                    assert True
+
+    @mark.skip(reason='create_a_profile(), exchange returns HTTP 400 even with example return to later.')
+    @mark.cb_profiles
+    @mark.cb_products
+    def test_create_a_profile(self, coinbase_client):
+        parameters = {
+            'name': 'test_profile1'
+        }
+        coinbase = coinbase_client
+        profile = coinbase.create_a_profile(parameters)
+
+        if profile is not None:
+            assert True
+
+    @mark.skip(reason='transfer_funds_between_profiles(), not working yet..need create_a_profile'
+                      'resolved.')
+    @mark.cb_profiles
+    @mark.cb_products
+    def test_transfer_funds_between_profiles(self, coinbase_client):
+        params = {
+            "from": "e543fd44-cbcd-4144-a2d9-6d81f42e2093",
+            "to": "00921972-6b04-4daa-9458-3a38dd4924f6",
+            "amount": "12.345",
+            "currency": "BTC"
+        }
+        coinbase = coinbase_client
+        response = coinbase.transfer_funds_between_profiles(params)
+
+        if response is not None:
+            assert True
+
+    @mark.cb_profiles
+    @mark.cb_products
+    def test_get_profile_by_id(self, coinbase_client):
+        profiles_keys_list = ['id', 'user_id', 'name', 'active', 'is_default', 'has_margin', 'created_at']
+        coinbase = coinbase_client
+        response = coinbase.get_profiles()
+
+        if response is not None:
+            for p in response:
+                profile = coinbase.get_profile_by_id(p['id'])
+                if profile is not None:
+                    key_test = [x in profiles_keys_list for x in profile.keys()]
+                    logger.info('test_get_profile_by_id, keys_test for profile {}, is {}'.format(profile['id'], key_test))
+                    if False in key_test:
+                        assert False
+
+    @mark.skip(reason='rename_a_profile(), is not complete first need to resolve create_a_profile()')
+    @mark.cb_profiles
+    @mark.cb_products
+    def test_rename_a_profile(self, coinbase_client):
+        path_param = {
+            'profile_id': 'test123'
+        }
+
+        params = {
+            'profile_id': 'test123',
+            'name': 'test_after'
+        }
+
+        coinbase = coinbase_client
+        response = coinbase.rename_a_profile(path_param, params)
+
+        if response is not None:
+            assert True
+
+    @mark.skip(reason='delete_a_profile(), is not complete first need to resolve create_a_profile()')
+    @mark.cb_profiles
+    @mark.cb_products
+    def test_delete_a_profile(self, coinbase_client):
+        path_profile = {
+            'profile_id': 'test'
+        }
+
+        params = {
+            'profile_id': 'test',
+            'to': 'to_test'
+        }
+
+        coinbase = coinbase_client
+        response = coinbase.delete_a_profile(path_param, params)
+
+        if response is not None:
+            assert True
 
     @mark.cb_products
     def test_get_single_product(self, coinbase_client, btc_usd):
@@ -275,7 +378,6 @@ class CoinbaseTests:
                 assert True
 
     @mark.skip(reason='Hits a KeyError: "order_id" after several successful account_history fetches.  Fixing later')
-    @mark.test1
     @mark.cb_products
     def test_get_account_history(self, coinbase_client):
         """
@@ -350,7 +452,6 @@ class CoinbaseTests:
         if single_acct_holds is not None:
             assert len(single_acct_holds) != 0
 
-    @mark.test1
     @mark.cb_accounts
     @mark.cb_products
     def test_get_single_account_transfers(self, coinbase_client, btc_acct_id):
@@ -484,6 +585,7 @@ class CoinbaseTests:
 
         if False not in key_test:
             assert True
+
 
     @mark.cb_products
     @mark.cb_orders

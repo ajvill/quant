@@ -2,7 +2,8 @@ from pathlib import Path
 from requests.auth import AuthBase
 from threading import Thread
 import json, hmac, hashlib, time, requests, base64
-import logging, os
+import logging
+import os
 import websocket
 import ssl
 
@@ -10,6 +11,9 @@ logger = logging.getLogger()
 
 
 class CoinbaseClient:
+    """
+    Coinbase API, with REST and Websocket hooks to exchange
+    """
     def __init__(self, sandbox):
         if sandbox:
             self.base_url = 'https://api-public.sandbox.pro.coinbase.com'
@@ -30,8 +34,8 @@ class CoinbaseClient:
 
     def get_single_account_ledger(self, acct_id):
         """
-        Lists ledger activity for an account. This includes anything that would affect the accounts balance -
-        transfers, trades, fees, etc.
+        Lists ledger activity for an account. This includes anything that would affect the accounts
+         balance - transfers, trades, fees, etc.
         """
         request = self.make_request('GET', '/accounts/{}/ledger'.format(acct_id), None)
 
@@ -92,6 +96,9 @@ class CoinbaseClient:
         return exchange_response
 
     def cancel_an_order(self, order_id):
+        """
+        cancel a specific order using order_id of active order
+        """
         exchange_response = self.make_request('DELETE', '/orders/{}'.format(order_id), None)
         if exchange_response is not None:
             logger.info('order_id {} was canceled'.format(order_id))
@@ -120,8 +127,7 @@ class CoinbaseClient:
                 'trading_enabled': response['trading_enabled']
             }
             return single_account_id_data
-        else:
-            return None
+        return None
 
     def get_single_order(self, order_id):
         """
@@ -203,21 +209,17 @@ class CoinbaseClient:
 
     def get_bid_ask(self, symbol, level=1):
         """
-        Get a list of open orders for a product.  Amount of detail custom by level param..1,2,3 available
-        :param symbol:
-        :param level:
-        :return: prices
+        Get a list of open orders for a product.  Amount of detail custom by level param..1,2,3
+        available
         """
         data = dict()
         data['id'] = symbol
         ob_data = self.get_product_ob(symbol, level)
-
-        # Note ob_data['bids']....[['38634.44', '3009.99948234', 1]]...returns dict of list...price, size, num_orders
-
         # TODO this section below is not right.  If level is set higher than 1 code below will fail
         if ob_data is not None:
             if symbol not in self.prices:
-                self.prices[symbol] = {'bid': float(ob_data['bids'][0][0]), 'ask': float(ob_data['asks'][0][0])}
+                self.prices[symbol] = {'bid': float(ob_data['bids'][0][0]),
+                                       'ask': float(ob_data['asks'][0][0])}
             else:
                 self.prices[symbol]['bid'] = float(ob_data['bids'][0][0])
                 self.prices[symbol]['ask'] = float(ob_data['asks'][0][0])
@@ -235,11 +237,13 @@ class CoinbaseClient:
         # ob_data = self.make_request('GET', '/products/{}/ticker'.format(data['id']), None)
         ob_data = self.get_product_ticker(symbol)
 
-        # TODO complete remaining ob_data is a dict with keys: trade_id, price, size, time, bid, ask, volume
+        # TODO complete remaining ob_data is a dict with keys: trade_id, price, size, time, bid,
+        #  ask, volume
         '''
         if ob_data is not None:
             if symbol not in self.prices:
-                self.prices[symbol] = {'bid': float(ob_data['bids'][0][0]), 'ask': float(ob_data['asks'][0][0])}
+                self.prices[symbol] = {'bid': float(ob_data['bids'][0][0]),
+                                        'ask': float(ob_data['asks'][0][0])}
             else:
                 self.prices[symbol]['bid'] = float(ob_data['bids'][0][0])
                 self.prices[symbol]['ask'] = float(ob_data['asks'][0][0])
@@ -272,12 +276,13 @@ class CoinbaseClient:
 
         if response is not None:
             return data
-        else:
-            return None
+
+        return None
 
     def _convert_currency_dict(self, currency):
         """
-        Helper method for get currency methods used to response dictionary values from exchange to desired formats
+        Helper method for get currency methods used to response dictionary values from exchange to
+        desired formats
         """
 
         currency_data = {
@@ -332,8 +337,8 @@ class CoinbaseClient:
             for currency in response:
                 currencies_data.append(self._convert_currency_dict(currency))
             return currencies_data
-        else:
-            return None
+
+        return None
 
     def get_a_currency(self, currency_id):
         """
@@ -343,8 +348,8 @@ class CoinbaseClient:
         currency = self.make_request('GET', '/currencies/{}'.format(currency_id), None)
         if currency is not None:
             return self._convert_currency_dict(currency)
-        else:
-            return None
+
+        return None
 
 
     def get_fees(self):
@@ -362,17 +367,14 @@ class CoinbaseClient:
                 'usd_volume': float(response['usd_volume'])
             }
             return fees_data
-        else:
-            return None
+
+        return None
 
     def get_historic_rates(self, symbol, interval):
         """
-        Historic rates for a product. Rates are returned in grouped buckets based on requested granularity.
-        Granularity must be 60, 300, 900, 3600, 21600, 86400...1min, 5min, 15min, 1hr, 6hr, 1day.
-        So 2 day is 86400 * 2
-        :param symbol:
-        :param interval:
-        :return:
+        Historic rates for a product. Rates are returned in grouped buckets based on requested
+        granularity. Granularity must be 60, 300, 900, 3600, 21600, 86400...1min, 5min, 15min,
+        1hr, 6hr, 1day. So 2 day is 86400 * 2
         """
         data = dict()
         data['symbol'] = symbol
@@ -384,16 +386,17 @@ class CoinbaseClient:
         if response is not None:
             for c in response:
                 #              time,    low,         high,        open,       close,        volume
-                candles.append([c[0], float(c[1]), float(c[2]), float(c[3]), float(c[4]), float(c[5])])
+                candles.append([c[0], float(c[1]), float(c[2]), float(c[3]), float(c[4]),
+                                float(c[5])])
 
         return candles
 
     def get_single_account_holds(self, acct_id, params=None):
         """
         List holds of an account that belong to the same profile as the API key.
-        Holds are placed on an account for any active orders or pending withdraw requests. As an order is filled,
-        the hold amount is updated. If an order is canceled, any remaining hold is removed. For a withdraw, once
-        it is completed, the hold is removed.
+        Holds are placed on an account for any active orders or pending withdraw requests. As an
+        order is filled, the hold amount is updated. If an order is canceled, any remaining hold
+        is removed. For a withdraw, once it is completed, the hold is removed.
         """
         response = self.make_request('GET', '/accounts/{}/holds'.format(acct_id), params)
 
@@ -401,14 +404,14 @@ class CoinbaseClient:
 
         if response is not None:
             for hold in response:
-                data = {
-                    'id': response['id'],
-                    'created_at': response['created_at'],
-                    'updated_at': response['updated_at'],
-                    'type': response['type'],
-                    'ref': response['ref']
+                hold_data = {
+                    'id': hold['id'],
+                    'created_at': hold['created_at'],
+                    'updated_at': hold['updated_at'],
+                    'type': hold['type'],
+                    'ref': hold['ref']
                 }
-                holds_data.append(data)
+                holds_data.append(hold_data)
         return holds_data
 
     def get_products(self):
@@ -431,10 +434,8 @@ class CoinbaseClient:
 
     def get_product_ob(self, symbol, params):
         """
-        Get a list of open orders for a product. The amount of detail shown can be customized with the level parameter.
-        :param symbol: sets the security token to parse
-        :param params: sets book depth to level 1, 2, or 3
-        :return: order book dict
+        Get a list of open orders for a product. The amount of detail shown can be customized
+        with the level parameter.
         """
         level = int(params['level'])
         response = self.make_request('GET', '/products/{}/book'.format(symbol), params)
@@ -478,6 +479,53 @@ class CoinbaseClient:
 
         return product_data
 
+    def _get_profile_data(self, profile):
+        """
+        Used to convert exchange data response to a dictionary
+        :param profile:
+        :return:
+        """
+        profile_data = {
+            'id': profile['id'],
+            'user_id': profile['user_id'],
+            'name': profile['name'],
+            'active': profile['active'],
+            'is_default': profile['is_default'],
+            # TODO created_at is data-time maybe convert from str to datetime
+            'created_at': profile['created_at']
+        }
+        return profile_data
+
+    def get_profiles(self):
+        """
+        Gets a list of all of the current user's profiles.
+        """
+        response = self.make_request('GET', '/profiles', None)
+
+        profile_list = []
+
+        if response is not None:
+            for profile in response:
+                profile_data = self._get_profile_data(profile)
+                profile_list.append(profile_data)
+            return profile_list
+
+        return None
+
+    def get_profile_by_id(self, profile_id):
+        """
+        Information for a single profile. Use this endpoint when you know the profile_id.
+        """
+        response = self.make_request('GET', '/profiles/{}'.format(profile_id), None)
+
+        profile_data = {}
+
+        if response is not None:
+            profile_data = self._get_profile_data(response)
+            return profile_data
+
+        return None
+
     def get_single_product(self, symbol):
         """
         Get market data for a specific currency pair.
@@ -498,7 +546,8 @@ class CoinbaseClient:
 
     def get_signed_prices(self):
         """
-        Get cryptographically signed prices ready to be posted on-chain using Compound's Open Oracle smart contract.
+        Get cryptographically signed prices ready to be posted on-chain using Compound's Open
+        Oracle smart contract.
         """
         response = self.make_request('GET', '/oracle', None)
 
@@ -592,15 +641,13 @@ class CoinbaseClient:
     def get_all_fills(self, params=None):
         """
         Get a list of recent fills of the API key's profile.
-        :param params:
-        :return: A list of dictionaries containing order fill information based on product_id or order_id
         """
         response = self.make_request('GET', '/fills', params)
 
         if response is not None:
             return response
-        else:
-            return None
+
+        return None
 
     def get_all_orders(self, params):
         """
@@ -632,10 +679,13 @@ class CoinbaseClient:
                 }
                 orders_list.append(data)
             return orders_list
-        else:
-            return None
+
+        return None
 
     def make_product_dict(self, product):
+        """
+        Method used to convert product exchange data and cast specific keys
+        """
 
         product_dict = {
             'id': product['id'],
@@ -682,41 +732,46 @@ class CoinbaseClient:
         return ob_list
 
     def make_request(self, method, endpoint, data):
+        """
+        Method used to send request commands to exchange.
+        """
         # Coinbase doesn't like mixing str and int so cast data an str
         headers = {'Accept': 'application/json'}
         if method == 'DELETE':
-            response = requests.delete(self.base_url + endpoint, headers=headers, params=str(data), auth=self.auth)
+            response = requests.delete(self.base_url + endpoint, headers=headers,
+                                       params=str(data), auth=self.auth)
         elif method == 'GET':
-            response = requests.get(self.base_url + endpoint, headers=headers, params=data, auth=self.auth)
+            response = requests.get(self.base_url + endpoint, headers=headers, params=data,
+                                    auth=self.auth)
         elif method == 'POST':
             headers = {
                 'Accept': 'application/json',
                 'Content-type': 'application/json'
             }
-            response = requests.post(self.base_url + endpoint, headers=headers, json=data, auth=self.auth)
+            response = requests.post(self.base_url + endpoint, headers=headers, json=data,
+                                     auth=self.auth)
         else:
             raise ValueError()
 
         if response.status_code == 200:
             return response.json()
         else:
-            logger.error("Error while making %s request to %s (error code %s) response from server: %s",
-                         method, endpoint, response.status_code, response.text)
-            return None
+            logger.error("Error while making %s request to %s (error code %s) response from server:"
+                         "%s", method, endpoint, response.status_code, response.text)
+        return None
 
     def create_new_order(self, order):
         """
-        You can place two types of orders: limit and market. Orders can only be placed if your account has sufficient
-        funds. Each profile can have a maximum of 500 open orders on a product. Once reached, the profile will not be
-        able to place any new orders until the total number of open orders is below 500. Once an order is placed, your
-        account funds will be put on hold for the duration of the order. How much and which funds are put on hold
-        depends on the order type and parameters specified. See the Holds details below.
-
-        :param order: order a dictionary passed to exchange.  May be a limit or market order type
-        :return:
+        You can place two types of orders: limit and market. Orders can only be placed if your
+        account has sufficient funds. Each profile can have a maximum of 500 open orders on a
+        product. Once reached, the profile will not be able to place any new orders until the
+        total number of open orders is below 500. Once an order is placed, your account funds
+        will be put on hold for the duration of the order. How much and which funds are put on
+        hold depends on the order type and parameters specified. See the Holds details below.
         """
 
-        # TODO fix order_data dict, since market and limit are slightly different best to combine them
+        # TODO fix order_data dict, since market and limit are slightly different best to combine
+        #  them
         order_data = {}
         response = self.make_request('POST', '/orders', order)
 
@@ -754,8 +809,34 @@ class CoinbaseClient:
                     'filled_size': float(response['filled_size']),
                 }
             return order_data
+
+        return None
+
+    def create_a_profile(self, params):
+        """
+        Create a new profile. Will fail if no name is provided or if user already has 10 profiles.
+        """
+        response = self.make_request('POST', '/profiles', params)
+
+        profile_data = {}
+
+        if response is not None:
+            return profile_data
         else:
             return None
+
+    def delete_a_profile(self, path_param, params):
+        """
+        Deletes the profile specified by profile_id and transfers all funds to the profile
+        specified by to. Fails if there are any open orders on the profile to be deleted.
+        """
+        # TODO need to resolve create_a_profile() before can fully test this method
+        response = self.make_request('POST', '/profiles/{}/deactivate'.format(path_param['profile_id']), params)
+
+        if response is not None:
+            return response
+
+        return None
 
     def start_ws(self):
         self.ws = websocket.WebSocketApp(self.wss_url,
@@ -781,9 +862,40 @@ class CoinbaseClient:
     def subscribe_channel(self, symbol):
         return
 
+    def rename_a_profile(self, path_param, params):
+        """
+        Rename a profile. Names 'default' and 'margin' are reserved.
+        """
+        # TODO incomplete, create_a_profile() is not working revisit this method after resolving
+        response = self.make_request('POST', '/profiles/{}'.format(path_param['profile_id']), params)
+
+        profile_data = {}
+
+        if response is not None:
+            profile_data = self._get_profile_data(response)
+            return profile_data
+
+        return None
+
+    def transfer_funds_between_profiles(self, params):
+        """
+        Transfer an amount of currency from one profile to another.
+        """
+        # TODO incomplete, create_a_profile() is not working revisit this method after resolving
+        response = self.make_request('POST', '/profiles/transfer', params)
+
+        if response is not None:
+            return response
+
+        return None
+
+
 
 # Create custom authentication for Exchange
 class CoinbaseExchangeAuth(AuthBase):
+    """
+    Class used to authenticate a connection to Coinbase exchange
+    """
     def __init__(self, sandbox):
         if sandbox:
             api_info = self.get_api_key_info(sandbox)

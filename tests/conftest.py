@@ -1,9 +1,12 @@
+import logging
 import sys
 sys.path.append('../.')
 
 from pytest import fixture
 from config import Config
 from src.connectors.coinbase import CoinbaseClient
+
+logger = logging.getLogger(__name__)
 
 
 def pytest_addoption(parser):
@@ -14,7 +17,7 @@ def pytest_addoption(parser):
     )
 
 
-@fixture(scope='session')
+@fixture(scope='class')
 def env(request):
     return request.config.getoption('--env')
 
@@ -25,7 +28,7 @@ def app_config(env):
     return cfg
 
 
-@fixture(scope='function')
+@fixture(scope='class', autouse=True)
 def coinbase_client(env):
     if env == 'sandbox':
         coinbase = CoinbaseClient(sandbox=True)
