@@ -351,6 +351,20 @@ class CoinbaseClient:
 
         return None
 
+    def get_a_conversion(self, path_params, params):
+        """
+        Gets a currency conversion by id (i.e. USD -> USDC).
+        """
+        response = self.make_request('GET', '/conversions/{}'.format(path_params['conversion_id']), params)
+
+        data = {}
+
+        if response is not None:
+            return data
+
+        return None
+
+
 
     def get_fees(self):
         """
