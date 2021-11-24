@@ -351,6 +351,19 @@ class CoinbaseClient:
 
         return None
 
+    def get_a_report(self, params):
+        """
+        Get a specific report by report_id.
+        """
+        response = self.make_request('GET', '/reports/{}'.format(params['report_id']), None)
+
+        report_data = {}
+
+        if response is not None:
+            return report_data
+
+        return None
+
     def get_a_conversion(self, path_params, params):
         """
         Gets a currency conversion by id (i.e. USD -> USDC).
@@ -696,6 +709,20 @@ class CoinbaseClient:
 
         return None
 
+    def get_all_reports(self, params=None):
+        """
+        Gets a list of past fills/account reports.
+        """
+        # TODO, currently response.status code == 200 response is an empty list using sandbox env
+        response = self.make_request('GET', '/reports', params)
+
+        reports_data = {}
+
+        if response is not None:
+            return reports_data
+
+        return None
+
     def make_product_dict(self, product):
         """
         Method used to convert product exchange data and cast specific keys
@@ -838,6 +865,20 @@ class CoinbaseClient:
             return profile_data
         else:
             return None
+
+    def create_a_report(self, params=None):
+        """
+        Generates a report. Reports are either for past account history or past fills on either
+        all accounts or one product's account.
+        """
+        response = self.make_request('POST', '/reports', params)
+
+        report_data = {}
+
+        if response is not None:
+            return report_data
+
+        return None
 
     def delete_a_profile(self, path_param, params):
         """

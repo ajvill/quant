@@ -508,6 +508,44 @@ class CoinbaseTests:
         if single_acct_ledger is not None:
             assert len(single_acct_ledger) != 0
 
+    @mark.skip(reason='get_all_reports(), returns an empty list status code 200, revisit')
+    @mark.cb_reports
+    @mark.cb_products
+    def test_get_all_reports(self, coinbase_client):
+        query_params = None
+
+        coinbase = coinbase_client
+        reports = coinbase.get_all_reports(query_params)
+
+        if reports is not None:
+            assert True
+
+    @mark.skip(reason='create_a_report(), incomplete, revisit')
+    @mark.cb_reports
+    @mark.cb_products
+    def test_create_a_report(self, coinbase_client):
+        body_params = {
+
+        }
+        coinbase = coinbase_client
+        report_response = coinbase.create_a_report(body_params)
+
+        if report_response is not None:
+            assert True
+
+    @mark.skip(reason='get_a_report(), incomplete, revisit')
+    @mark.cb_reports
+    @mark.cb_products
+    def test_get_a_report(self, coinbase_client):
+        path_params = {
+
+        }
+        coinbase = coinbase_client
+        report_response = coinbase.get_a_report(path_params)
+
+        if report_response is not None:
+            assert True
+
     @mark.create_new_order
     @mark.cb_products
     @mark.cb_orders
