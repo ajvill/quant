@@ -508,6 +508,37 @@ class CoinbaseTests:
         if single_acct_ledger is not None:
             assert len(single_acct_ledger) != 0
 
+    @mark.cb_coinbase_accounts
+    @mark.cb_products
+    def test_get_all_cb_wallets(self, coinbase_client):
+        wallet_key_list = ['id', 'name', 'balance', 'currency', 'type', 'primary', 'active',
+                           'available_on_consumer', 'hold_balance', 'hold_currency']
+        coinbase = coinbase_client
+        wallets = coinbase.get_all_cb_wallets()
+
+        if wallets is not None:
+            for wallet in wallets:
+                keys_test = [x in wallet_key_list for x in wallet.keys()]
+                if False in keys_test:
+                    assert False
+                else:
+                    logger.info('Wallet {} passed all dictionary values test'.format(wallet['name']))
+                    assert True
+
+    @mark.skip(reason='gen_crypto_address(), is a one-time address test may not need')
+    @mark.cb_coinbase_accounts
+    @mark.cb_products
+    def test_gen_crypto_address(self, coinbase_client):
+        path_params = {
+            'account_id': '1234'
+        }
+
+        coinbase = coinbase_client
+        address_info = coinbase.gen_crypto_address(path_params)
+
+        if address_info is not None:
+            assert True
+
     @mark.skip(reason='get_all_reports(), returns an empty list status code 200, revisit')
     @mark.cb_reports
     @mark.cb_products

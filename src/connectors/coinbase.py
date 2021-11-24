@@ -323,6 +323,34 @@ class CoinbaseClient:
 
         return currency_data
 
+    def get_all_cb_wallets(self):
+        """
+        Gets all the user's available Coinbase wallets (These are the wallets/accounts that are
+        used for buying and selling on www.coinbase.com)
+        """
+        response = self.make_request('GET', '/coinbase-accounts', None)
+
+        wallet_list = []
+
+        if response is not None:
+            for wallet in response:
+                wallet_data = {
+                    'id': wallet['id'],
+                    'name': wallet['name'],
+                    'balance': float(wallet['balance']),
+                    'currency': wallet['currency'],
+                    'type': wallet['type'],
+                    'primary': wallet['primary'],
+                    'active': wallet['active'],
+                    'available_on_consumer': wallet['available_on_consumer'],
+                    'hold_balance': float(wallet['hold_balance']),
+                    'hold_currency': wallet['hold_currency']
+                }
+                wallet_list.append(wallet_data)
+            return wallet_list
+
+        return None
+
     def get_all_currencies(self):
         """
         Gets a list of all known currencies.
@@ -616,6 +644,20 @@ class CoinbaseClient:
             return None
 
         return trade_data
+
+    def gen_crypto_address(self, params=None):
+        """
+        Generates a one-time crypto address for depositing crypto.
+        """
+        response = self.make_request('POST', '/coinbase-accounts/{}/addresses'.format(params['id'])
+                                     , None)
+
+        address_data = {}
+
+        if response is not None:
+            return address_data
+
+        return None
 
     def get_24hr_stats(self, symbol):
         """
