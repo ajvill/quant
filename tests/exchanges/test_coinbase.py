@@ -161,7 +161,7 @@ class CoinbaseTests:
     @mark.cb_profiles
     @mark.cb_products
     def test_delete_a_profile(self, coinbase_client):
-        path_profile = {
+        path_param = {
             'profile_id': 'test'
         }
 
