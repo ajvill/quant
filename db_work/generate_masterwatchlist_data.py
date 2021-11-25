@@ -42,11 +42,11 @@ def main(num_samples=100000, sample_size=20, random_sample_size=False):
     conn.commit()
 
     cur = conn.cursor()
-    # NOTE ticker should be UNIQUE but for testing purposes removing constraint
+    # NOTE symbol should be UNIQUE but for testing purposes removing constraint
     sql = '''
         CREATE TABLE master_watchlist2 (
             id SERIAL, 
-            ticker VARCHAR(128) NOT NULL,
+            symbol VARCHAR(128) NOT NULL,
             name VARCHAR(128) UNIQUE NOT NULL,
             sector VARCHAR(128) NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -66,7 +66,7 @@ def main(num_samples=100000, sample_size=20, random_sample_size=False):
         name = 'fucker#{}'.format(count)
         sector = 'SpaceBalls{}'.format(count)
         cur.execute('''
-            INSERT INTO master_watchlist2 (ticker, name, sector)
+            INSERT INTO master_watchlist2 (symbol, name, sector)
             VALUES(%s, %s, %s)''', (entry, name, sector))
 
         if count % 100 == 0:
