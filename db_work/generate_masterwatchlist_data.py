@@ -15,7 +15,7 @@ def get_conn():
     return connection
 
 
-def generate_random_symbols(num_samples, sample_size=10, randomize_sample_size=False):
+def generate_random_tickers(num_samples, sample_size=10, randomize_sample_size=False):
     """
     Random generator to simulate symbols for securities, ASCII integer 65-90 (A-Z)
     :param num_samples: number of entries returned back in the list
@@ -46,7 +46,7 @@ def main(num_samples=100000, sample_size=20, random_sample_size=False):
     sql = '''
         CREATE TABLE master_watchlist2 (
             id SERIAL, 
-            symbol VARCHAR(128) NOT NULL,
+            ticker VARCHAR(128) NOT NULL,
             name VARCHAR(128) UNIQUE NOT NULL,
             sector VARCHAR(128) NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -58,7 +58,7 @@ def main(num_samples=100000, sample_size=20, random_sample_size=False):
 
     # create a random list of security names for testing only all entries are artificial
     start = time.time()
-    entry_list = generate_random_symbols(num_samples, sample_size, random_sample_size)
+    entry_list = generate_random_ticker(num_samples, sample_size, random_sample_size)
 
     count = 0
     for entry in entry_list:
@@ -66,7 +66,7 @@ def main(num_samples=100000, sample_size=20, random_sample_size=False):
         name = 'fucker#{}'.format(count)
         sector = 'SpaceBalls{}'.format(count)
         cur.execute('''
-            INSERT INTO master_watchlist2 (symbol, name, sector)
+            INSERT INTO master_watchlist2 (ticker, name, sector)
             VALUES(%s, %s, %s)''', (entry, name, sector))
 
         if count % 100 == 0:
