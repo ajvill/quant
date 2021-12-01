@@ -1,20 +1,22 @@
-DROP TABLE accounts CASCADE;
+DROP TABLE watchlist_members CASCADE;
+CREATE TABLE watchlist_members (
+     id SERIAL,
+     name VARCHAR(128) UNIQUE NOT NULL,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+     PRIMARY KEY(id)
+ );
 
-CREATE TABLE accounts (
-    id SERIAL,
-    name VARCHAR(128) UNIQUE NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    PRIMARY KEY(id)
-);
+DROP INDEX wl_unique;
+CREATE INDEX wl_unique ON watchlist_members(name);
 
 DROP TABLE master_watchlist CASCADE;
-
 CREATE TABLE master_watchlist (
     id SERIAL,
     ticker VARCHAR(128) NOT NULL,
     name VARCHAR(128) UNIQUE NOT NULL,
     sector VARCHAR(128) NOT NULL,
+    watchlist_members_id INTEGER REFERENCES  watchlist_members(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY(id)
@@ -24,8 +26,16 @@ DROP INDEX mw_unique;
 CREATE INDEX mw_unique ON master_watchlist(ticker);
 SELECT pg_relation_size('master_watchlist'), pg_indexes_size('master_watchlist');
 
-DROP TABLE positions CASCADE;
+DROP TABLE accounts CASCADE;
+CREATE TABLE accounts (
+    id SERIAL,
+    name VARCHAR(128) UNIQUE NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY(id)
+);
 
+DROP TABLE positions CASCADE;
 CREATE TABLE positions (
     id SERIAL,
     option INTEGER,
@@ -41,7 +51,6 @@ CREATE TABLE positions (
 );
 
 DROP TABLE portfolio CASCADE;
-
 CREATE TABLE portfolio (
     id SERIAL,
     total_cash NUMERIC(10, 4),
@@ -54,7 +63,6 @@ CREATE TABLE portfolio (
 );
 
 DROP TABLE trade_log CASCADE;
-
 CREATE TABLE trade_log (
     id SERIAL,
     date DATE,
@@ -75,7 +83,6 @@ CREATE TABLE trade_log (
 );
 
 DROP TABLE daily_performance CASCADE;
-
 CREATE TABLE daily_performance (
     id SERIAL,
     date DATE,
@@ -95,6 +102,7 @@ CREATE OR REPLACE FUNCTION trigger_set_timestamp()
  END;
  $$ LANGUAGE plpgsql;
 
+-- Triggers
  CREATE TRIGGER set_timestamp
  BEFORE UPDATE ON accounts
  FOR EACH ROW
@@ -102,6 +110,11 @@ CREATE OR REPLACE FUNCTION trigger_set_timestamp()
 
 CREATE TRIGGER set_timestamp
 BEFORE UPDATE ON master_watchlist
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_timestamp();
+
+CREATE TRIGGER set_timestamp
+BEFORE UPDATE ON watchlist_members
 FOR EACH ROW
 EXECUTE PROCEDURE trigger_set_timestamp();
 
