@@ -1,18 +1,6 @@
 import time
-import psycopg2
-import hidden
-import myutils
 import numpy as np
-
-
-def get_conn():
-    secrets = hidden.secrets()
-    connection = psycopg2.connect(host=secrets['host'], port=secrets['port'],
-                            database=secrets['database'],
-                            user=secrets['user'],
-                            password=secrets['pass'],
-                            connect_timeout=10)
-    return connection
+from quant_db_utils import get_conn
 
 
 def generate_random_tickers(num_samples, sample_size=10, randomize_sample_size=False):
@@ -38,7 +26,7 @@ def main(num_samples=100000, sample_size=20, random_sample_size=False):
     conn = get_conn()
 
     cur = conn.cursor()
-    cur.execute('''DROP TABLE master_watchlist2''')
+    #cur.execute('''DROP TABLE master_watchlist2''')
     conn.commit()
 
     cur = conn.cursor()
@@ -58,7 +46,7 @@ def main(num_samples=100000, sample_size=20, random_sample_size=False):
 
     # create a random list of security names for testing only all entries are artificial
     start = time.time()
-    entry_list = generate_random_ticker(num_samples, sample_size, random_sample_size)
+    entry_list = generate_random_tickers(num_samples, sample_size, random_sample_size)
 
     count = 0
     for entry in entry_list:
