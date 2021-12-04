@@ -5,6 +5,7 @@ sys.path.append('../.')
 from pytest import fixture
 from config import Config
 from src.connectors.coinbase import CoinbaseClient
+from db_work.quant_db.quant_db_utils import *
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +14,7 @@ def pytest_addoption(parser):
     parser.addoption(
                     '--env',
                     action='store',
-                    help='Environment to run tests against, options are: live or sandbox'
+                    help='Environment to run tests against, options are: sandbox, live, db'
     )
 
 
@@ -28,7 +29,7 @@ def app_config(env):
     return cfg
 
 
-@fixture(scope='class', autouse=True)
+@fixture(scope='class')
 def coinbase_client(env):
     if env == 'sandbox':
         coinbase = CoinbaseClient(sandbox=True)
@@ -36,3 +37,11 @@ def coinbase_client(env):
         coinbase = CoinbaseClient(sandbox=False)
 
     yield coinbase
+
+
+@fixture(scope='class')
+def quant_db(env):
+    if env == 'db':
+        conn = get_conn()
+
+    yield conn

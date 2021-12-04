@@ -1,4 +1,5 @@
 from cryptography.fernet import Fernet
+import os
 
 
 def get_db_secret():
@@ -6,10 +7,12 @@ def get_db_secret():
     prepare dB secret for connection
     :return: plain text
     """
-    with open('../accounts/postgres_key.bin', 'rb') as key_object:
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+    with open('../../accounts/postgres_key.bin', 'rb') as key_object:
         for line in key_object:
             encryptedkey = line
-    with open('../accounts/postgres_cipheredpwd.bin', 'rb') as pwd_object:
+    with open('../../accounts/postgres_cipheredpwd.bin', 'rb') as pwd_object:
         for line in pwd_object:
             encryptedpwd = line
     cipher_suite = Fernet(encryptedkey)

@@ -1,6 +1,4 @@
-import time
-from quant_db_utils import *
-
+from quant_db.quant_db_utils import *
 
 QUANT_TABLES = ['watchlist_members', 'master_watchlist', 'accounts', 'positions', 'portfolio',
                 'trade_log', 'daily_performance']
@@ -20,7 +18,8 @@ menu = """Please select an option.
 6. drop a table
 7. drop all tables
 8. tear down everything and build back db architecture
-9. exit
+9. insert values into table
+10. exit
 
 Your selection: """
 
@@ -34,12 +33,15 @@ def prompt_new(cur, action, quant_list):
 
     if action in 'CREATE':
         action_name = 'create'
+    elif action in 'INSERT':
+        action_name = 'insert'
     else:
         action_name = 'drop'
 
     while True:
         print("\nSelect which {} to {}.".format(db_type_name, action_name))
         for i, db_type in enumerate(quant_list):
+            # Here select table or index
             print("{}. {}".format(i, db_type))
         db_type_content = input("Your selection: ")
         if int(db_type_content) in range(0, len(quant_list)):
@@ -48,6 +50,9 @@ def prompt_new(cur, action, quant_list):
             if db_type_name == 'table':
                 if action_name == 'create':
                     create_table(cur, quant_list[int(db_type_content)])
+                elif action_name == 'insert':
+                    print("Something gets inserted here... try pytest for real testing.")
+                    #insert_table(cur, quant_list[int(db_type_content)], params)
                 else:
                     drop_table(cur, quant_list[int(db_type_content)])
             else:
@@ -94,7 +99,7 @@ def main():
 
     print(welcome)
 
-    while (user_input := input(menu)) != "9":
+    while (user_input := input(menu)) != "10":
         if user_input == "0":
             print("Creating index...")
             prompt_index_action(cur, action='CREATE')
@@ -125,6 +130,8 @@ def main():
             prompt_index_action(cur, action='DROP', all_indexes=True)
             prompt_table_action(cur, action='CREATE', all_tables=True)
             prompt_index_action(cur, action='CREATE', all_indexes=True)
+        elif user_input == "9":
+            prompt_table_action(cur, action='INSERT', all_tables=False)
         else:
             print("Try again...please make a selection")
         conn.commit()
