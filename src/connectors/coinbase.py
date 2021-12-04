@@ -1041,15 +1041,14 @@ class CoinbaseExchangeAuth(AuthBase):
         '''
         api_list = []
         filename = ''
-        quant_dir = '{}/workspace_local/quant'.format(str(Path.home()))
 
         if sandbox:
             filename = 'coinbase_api_sandbox.txt'
         else:
             filename = 'coinbase_api.txt'
 
-        os.chdir(quant_dir)
-        with open('accounts/{}'.format(filename), 'r') as file_api:
+        os.chdir(os.path.dirname(os.path.abspath(__file__)))
+        with open('../../accounts/{}'.format(filename), 'r') as file_api:
             for line in file_api:
                 # assign to list but remove newline ascii at end
                 api_list.append(line.rstrip())
