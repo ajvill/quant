@@ -1,20 +1,14 @@
 from quant_db.quant_db_utils import *
 
-QUANT_TABLES = ['watchlist_members', 'master_watchlist', 'accounts', 'positions', 'portfolio',
-                'trade_log', 'daily_performance']
-
-QUANT_INDEXES = ['wl_unique', 'mw_unique']
-
-
 welcome = "Quant db helper!"
 
 menu = """Please select an option.
 0. create an index
-1. create all indexes
+1. create all quant_obj
 2. create a table
 3. create all tables
 4. drop an index
-5. drop all indexes
+5. drop all quant_obj
 6. drop a table
 7. drop all tables
 8. tear down everything and build back db architecture
@@ -94,9 +88,6 @@ def main():
     conn = get_conn()
     cur = conn.cursor()
 
-    db_function_list = ['create_index', 'create_indexes', 'create_table', 'create_tables',
-                        'drop index', 'drop indexes', 'drop_table', 'drop_tables', 'do all']
-
     print(welcome)
 
     while (user_input := input(menu)) != "10":
@@ -104,7 +95,7 @@ def main():
             print("Creating index...")
             prompt_index_action(cur, action='CREATE')
         elif user_input == "1":
-            print("Creating all indexes...")
+            print("Creating all quant_obj...")
             prompt_index_action(cur, action='CREATE', all_indexes=True)
         elif user_input == "2":
             print("Creating table...")
@@ -116,7 +107,7 @@ def main():
             print("Dropping index...")
             prompt_index_action(cur, action='DROP')
         elif user_input == "5":
-            print("Drop all indexes...")
+            print("Drop all quant_obj...")
             prompt_index_action(cur, action='DROP', all_indexes=True)
         elif user_input == "6":
             print("Dropping table...")

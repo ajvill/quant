@@ -1,6 +1,13 @@
 from db_work.quant_db import hidden
 import psycopg2
+import logging
 
+logger = logging.getLogger()
+
+QUANT_TABLES = ('watchlist_members', 'master_watchlist', 'accounts', 'positions',
+                'portfolio', 'trade_log', 'daily_performance')
+
+QUANT_INDEXES = ('wl_unique', 'mw_unique')
 
 CREATE_WATCHLIST_MEMBERS_TABLE = """CREATE TABLE IF NOT EXISTS watchlist_members (
     id SERIAL,
@@ -16,7 +23,7 @@ CREATE_MW_WATCHLIST_TABLE = """CREATE TABLE IF NOT EXISTS master_watchlist (
     ticker VARCHAR(128) NOT NULL,
     name VARCHAR(128) UNIQUE NOT NULL,
     sector VARCHAR(128) NOT NULL,
-    watchlist_members_id INTEGER REFERENCES  watchlist_members(id) ON DELETE CASCADE,
+    --watchlist_members_id INTEGER REFERENCES  watchlist_members(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY(id)
@@ -104,10 +111,25 @@ INSERT_DAILY_PERFORMANCE_TABLE = """INSERT INTO daily_performance
 CREATE_WL_UNIQUE_INDEX = "CREATE INDEX IF NOT EXISTS  wl_unique ON watchlist_members(name);"
 CREATE_MW_UNIQUE_INDEX = "CREATE INDEX IF NOT EXISTS  mw_unique ON master_watchlist(ticker);"
 
+SELECT_TABLE_INDEX_COLUMN_LIST = """SELECT 
+    t.relname AS table_name, i.relname AS index_name, a.attname AS column_name
+    FROM pg_class t, pg_class i, pg_index ix, pg_attribute a
+    WHERE
+        t.oid = ix.indrelid
+        AND i.oid = ix.indexrelid
+        AND a.attrelid = t.oid
+        AND a.attnum = ANY(ix.indkey)
+        AND t.relkind = 'r'
+        -- and t.relname like 'mytable'
+    ORDER BY t.relname, i.relname;"""
+
+SELECT_WATCHLIST_MEMBERS_LIST = "SELECT id, name FROM watchlist_members;"
+
 quant_db_stmt_dict = {
     'watchlist_members': {
         'create': CREATE_WATCHLIST_MEMBERS_TABLE,
-        'insert': INSERT_WATCHLIST_MEMBERS_TABLE
+        'insert': INSERT_WATCHLIST_MEMBERS_TABLE,
+        'select': SELECT_WATCHLIST_MEMBERS_LIST
     },
     'master_watchlist': {
         'create': CREATE_MW_WATCHLIST_TABLE,
@@ -138,28 +160,66 @@ quant_db_stmt_dict = {
     },
     'mw_unique': {
         'create': CREATE_MW_UNIQUE_INDEX
-    }
+    },
+    'table_index_column_list': SELECT_TABLE_INDEX_COLUMN_LIST
 }
 
 
 def create_index(cur, index):
     sql = quant_db_stmt_dict[index]['create']
-    cur.execute(sql)
+    try:
+        cur.execute(sql)
+        logger.info("Created index {}".format(index))
+    except (Exception, psycopg2.Error) as error:
+        logger.error('Create index failed for {} error: {}'.format(index, error))
+        return error.pgerror
 
 
 def create_table(cur, table):
     sql = quant_db_stmt_dict[table]['create']
-    cur.execute(sql)
+    try:
+        cur.execute(sql)
+        logger.info("Created table {}".format(table))
+    except (Exception, psycopg2.Error) as error:
+        logger.error("Create table failed for {} error: {}".format(table, error))
+        return error.pgerror
+
+
+def create_watchlist_table(cur, table_name):
+    sql = """CREATE TABLE IF NOT EXISTS %s (
+        id SERIAL,
+        ticker_id INTEGER REFERENCES master_watchlist(id) ON DELETE CASCADE,
+        wl_id INTEGER REFERENCES watchlist_members(id) ON DELETE CASCADE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY(id)
+     );""" % (table_name, )
+    try:
+        cur.execute(sql)
+        logger.info("Created table {}".format(table_name))
+    except (Exception, psycopg2.Error) as error:
+        logger.error("Create table failed for {} error: {}".format(table_name, error))
+        return error.pgerror
 
 
 def drop_index(cur, index):
     sql = "DROP INDEX IF EXISTS %s;" % (index, )
-    cur.execute(sql)
+    try:
+        cur.execute(sql)
+        logger.info("Dropped index {}".format(index))
+    except (Exception, psycopg2.Error) as error:
+        logger.error("Drop index failed for {} error: {}".format(index, error))
+        return error.pgerror
 
 
 def drop_table(cur, table):
     sql = "DROP TABLE IF EXISTS %s CASCADE;" % (table, )
-    cur.execute(sql)
+    try:
+        cur.execute(sql)
+        logger.info("Dropping table {}".format(table))
+    except (Exception, psycopg2.Error) as error:
+        logger.error("Drop table failed for {} error: {}".format(table, error))
+        return error.pgerror
 
 
 def insert_table(cur, table, params):
@@ -171,7 +231,12 @@ def insert_table(cur, table, params):
 
     col_values_tuple = tuple(col_values_list)
     sql = quant_db_stmt_dict[table]['insert'] % col_values_tuple
-    cur.execute(sql)
+    try:
+        cur.execute(sql)
+        logger.info("Inserting data into table {}".format(table))
+    except (Exception, psycopg2.Error) as error:
+        logger.error("Inserting data into {} failed for error: {}".format(table, error))
+        return error.pgerror
 
 
 def queryValue(cur, sql, fields=None, error=None) :
@@ -201,9 +266,15 @@ def doQuery(cur, sql, fields=None) :
 
 def get_conn():
     secrets = hidden.secrets()
-    connection = psycopg2.connect(host=secrets['host'], port=secrets['port'],
-                                  database=secrets['database'],
-                                  user=secrets['user'],
-                                  password=secrets['pass'],
-                                  connect_timeout=10)
+    try:
+        connection = psycopg2.connect(host=secrets['host'], port=secrets['port'],
+                                      database=secrets['database'],
+                                      user=secrets['user'],
+                                      password=secrets['pass'],
+                                      connect_timeout=10)
+        logger.info("Quant DB connection established")
+    except (Exception, psycopg2.Error) as error:
+        logger.error("Error while establishing a connection to postgres, error {}".format(error))
+        return error.pgerror
+
     return connection
