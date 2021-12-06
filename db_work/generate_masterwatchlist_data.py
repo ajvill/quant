@@ -1,6 +1,6 @@
 import time
 import numpy as np
-from quant_db_utils import get_conn
+from src.quant_db.quant_db_utils import get_conn
 
 
 def generate_random_tickers(num_samples, sample_size=10, randomize_sample_size=False):
