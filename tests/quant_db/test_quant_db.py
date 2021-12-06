@@ -1,7 +1,6 @@
-from db_work.quant_db.quant_db_utils import create_index, create_table, drop_index, drop_table,\
-    create_watchlist_table, insert_table, quant_db_stmt_dict
+from src.quant_db.quant_db_utils import create_index, create_table, drop_index, drop_table, \
+    insert_table, quant_db_stmt_dict
 from pytest import mark
-import time
 import logging
 
 logger = logging.getLogger()

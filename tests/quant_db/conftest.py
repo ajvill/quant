@@ -1,7 +1,7 @@
 import json
 import sys
 import os
-from db_work.quant_db import quant_db_utils
+from src.quant_db import quant_db_utils
 from pytest import fixture
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))

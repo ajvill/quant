@@ -1,4 +1,4 @@
-from db_work.quant_db import hidden
+from src.quant_db import hidden
 import psycopg2
 import logging
 

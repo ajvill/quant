@@ -5,7 +5,7 @@ sys.path.append('../.')
 from pytest import fixture
 from config import Config
 from src.connectors.coinbase import CoinbaseClient
-from db_work.quant_db.quant_db_utils import get_conn
+from src.quant_db.quant_db_utils import get_conn
 
 logger = logging.getLogger(__name__)
 
