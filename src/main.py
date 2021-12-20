@@ -7,7 +7,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 stream_handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s %(levelname)s %(module)s %(funcName)s %(lineno)d :: %(message)s')
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(module)s %(funcName)s:%(lineno)d :: %(message)s')
 stream_handler.setFormatter(formatter)
 stream_handler.setLevel(logging.INFO)
 

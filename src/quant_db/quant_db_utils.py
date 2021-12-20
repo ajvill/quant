@@ -1,4 +1,7 @@
 from src.quant_db import hidden
+import pandas as pd
+import os
+import re
 import psycopg2
 import logging
 
@@ -17,20 +20,22 @@ CREATE_WATCHLIST_MEMBERS_TABLE = """CREATE TABLE IF NOT EXISTS watchlist_members
     PRIMARY KEY(id)
  );"""
 INSERT_WATCHLIST_MEMBERS_TABLE = "INSERT INTO watchlist_members (name) VALUES ('%s');"
+SELECT_WATCHLIST_MEMBERS_LIST = "SELECT id, name FROM watchlist_members;"
+SELECT_WATCHLIST_MEMBERS_FULL_LIST = "SELECT * FROM watchlist_members;"
 
 CREATE_MW_WATCHLIST_TABLE = """CREATE TABLE IF NOT EXISTS master_watchlist (
     id SERIAL,
-    ticker VARCHAR(128) NOT NULL,
+    ticker VARCHAR(128) UNIQUE NOT NULL,
     name VARCHAR(128) UNIQUE NOT NULL,
     sector VARCHAR(128) NOT NULL,
+    exchange VARCHAR(128) NOT NULL,
     --watchlist_members_id INTEGER REFERENCES  watchlist_members(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY(id)
 );"""
 INSERT_MASTER_WATCHLIST_TABLE = """INSERT INTO master_watchlist
-    (ticker, name, sector)
-    VALUES ('%s', '%s', '%s');"""
+    (ticker, name, sector, exchange) VALUES ('%s', '%s', '%s', '%s');"""
 
 CREATE_ACCOUNTS_TABLE = """CREATE TABLE IF NOT EXISTS accounts (
     id SERIAL,
@@ -56,7 +61,7 @@ CREATE_POSITIONS_TABLE = """CREATE TABLE IF NOT EXISTS positions (
 );"""
 INSERT_POSITIONS_TABLE = """INSERT INTO positions
     (option, ticker_id, position, quantity, open_date, cost_basis, accounts_id)
-    VALUES (%d, %d, '%s', %d, '%s', %f, '%s');"""
+    VALUES (%d, %d, '%s', %d, '%s', %f, %d);"""
 
 CREATE_PORTFOLIO_TABLE = """CREATE TABLE IF NOT EXISTS portfolio (
     id SERIAL,
@@ -123,13 +128,26 @@ SELECT_TABLE_INDEX_COLUMN_LIST = """SELECT
         -- and t.relname like 'mytable'
     ORDER BY t.relname, i.relname;"""
 
-SELECT_WATCHLIST_MEMBERS_LIST = "SELECT id, name FROM watchlist_members;"
+
+CREATE_FUNCTION_TRIGGER_SET_TIMESTAMP = """CREATE OR REPLACE FUNCTION trigger_set_timestamp()
+    RETURNS TRIGGER AS $$
+    BEGIN
+        NEW.updated_at = NOW();
+        RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;"""
+
+CREATE_TRIGGER_STORED_PROCEDURE = """CREATE TRIGGER set_timestamp
+    BEFORE UPDATE ON %s
+    FOR EACH ROW
+    EXECUTE PROCEDURE trigger_set_timestamp();"""
 
 quant_db_stmt_dict = {
     'watchlist_members': {
         'create': CREATE_WATCHLIST_MEMBERS_TABLE,
         'insert': INSERT_WATCHLIST_MEMBERS_TABLE,
-        'select': SELECT_WATCHLIST_MEMBERS_LIST
+        'select': SELECT_WATCHLIST_MEMBERS_LIST,
+        'select_full': SELECT_WATCHLIST_MEMBERS_LIST
     },
     'master_watchlist': {
         'create': CREATE_MW_WATCHLIST_TABLE,
@@ -161,8 +179,31 @@ quant_db_stmt_dict = {
     'mw_unique': {
         'create': CREATE_MW_UNIQUE_INDEX
     },
-    'table_index_column_list': SELECT_TABLE_INDEX_COLUMN_LIST
+    'table_index_column_list': SELECT_TABLE_INDEX_COLUMN_LIST,
+    'trigger_set_timestamp': CREATE_FUNCTION_TRIGGER_SET_TIMESTAMP,
+    'create_trigger': CREATE_TRIGGER_STORED_PROCEDURE
 }
+
+
+def create_col_values_tuple(params):
+    col_values_list = []
+
+    for key in params.keys():
+        col_values_list.append(params[key])
+
+    return tuple(col_values_list)
+
+
+def create_function_trigger(cur):
+    sql = quant_db_stmt_dict['trigger_set_timestamp']
+    try:
+        cur.execute(sql)
+        logger.info("Creating function trigger_set_timestamp()")
+    except (Exception, psycopg2.Error) as error:
+        logger.error("Creating function failed {} error: {}".format(sql, error))
+        return error.pgerror
+
+    return None
 
 
 def create_index(cur, index):
@@ -171,8 +212,10 @@ def create_index(cur, index):
         cur.execute(sql)
         logger.info("Created index {}".format(index))
     except (Exception, psycopg2.Error) as error:
-        logger.error('Create index failed for {} error: {}'.format(index, error))
+        logger.error("Create index failed for {} error: {}".format(index, error))
         return error.pgerror
+
+    return None
 
 
 def create_table(cur, table):
@@ -183,6 +226,25 @@ def create_table(cur, table):
     except (Exception, psycopg2.Error) as error:
         logger.error("Create table failed for {} error: {}".format(table, error))
         return error.pgerror
+
+    return None
+
+
+def create_trigger_stored_procedure(cur, table):
+    sql = quant_db_stmt_dict['create_trigger']
+
+    table_list = []
+    table_list.append(table)
+    col_sql_trigger_stmt = sql % tuple(table_list)
+    try:
+        cur.execute(col_sql_trigger_stmt)
+        logger.info("Created triggered stored procedure for table: {}".format(table))
+    except (Exception, psycopg2.Error) as error:
+        logger.error("Creating triggered stored procedure for {} failed, error: {}"
+                     .format(table, error))
+        return error.pgerror
+
+    return None
 
 
 def create_watchlist_table(cur, table_name):
@@ -201,6 +263,8 @@ def create_watchlist_table(cur, table_name):
         logger.error("Create table failed for {} error: {}".format(table_name, error))
         return error.pgerror
 
+    return None
+
 
 def drop_index(cur, index):
     sql = "DROP INDEX IF EXISTS %s;" % (index, )
@@ -210,6 +274,8 @@ def drop_index(cur, index):
     except (Exception, psycopg2.Error) as error:
         logger.error("Drop index failed for {} error: {}".format(index, error))
         return error.pgerror
+
+    return None
 
 
 def drop_table(cur, table):
@@ -221,15 +287,23 @@ def drop_table(cur, table):
         logger.error("Drop table failed for {} error: {}".format(table, error))
         return error.pgerror
 
+    return None
+
+
+def get_watchlist_members(cur, table):
+    try:
+        cur.execute(quant_db_stmt_dict[table]['select'])
+        logger.info("Returning contents from table {}".format(table))
+    except (Exception, psycopg2.Error) as error:
+        logger.error("Returning table failed for {} error: {}".format(table, error))
+        return error.pgerror
+
+    return cur.fetchall()
+
 
 def insert_table(cur, table, params):
-    col_values_list = []
 
-    # build up values list then convert to tuple
-    for key in params.keys():
-        col_values_list.append(params[key])
-
-    col_values_tuple = tuple(col_values_list)
+    col_values_tuple = create_col_values_tuple(params)
     sql = quant_db_stmt_dict[table]['insert'] % col_values_tuple
     try:
         cur.execute(sql)
@@ -237,6 +311,22 @@ def insert_table(cur, table, params):
     except (Exception, psycopg2.Error) as error:
         logger.error("Inserting data into {} failed for error: {}".format(table, error))
         return error.pgerror
+
+    return None
+
+
+def update_table(cur, table, params):
+
+    col_values_tuple = create_col_values_tuple(params)
+    sql = quant_db_stmt_dict[table]['update'] % col_values_tuple
+    try:
+        cur.execute(sql)
+        logger.info("Updating table {}, sql: {}".format(table, sql))
+    except (Exception, psycopg2.Error) as error:
+        logger.error("Update table {} failed, error: {}".format(table, error))
+        return error.pgerror
+
+    return None
 
 
 def queryValue(cur, sql, fields=None, error=None) :
@@ -278,3 +368,37 @@ def get_conn():
         return error.pgerror
 
     return connection
+
+
+def parse_tv_watchlists():
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    os.chdir('../../accounts/tv_watchlists')
+    files = os.listdir()
+    wl_list = []
+    data = {}
+
+    file_count = 0
+    ticker_count = 0
+    for file in files:
+        f = open(file, 'r')
+        line = f.readline()
+        line_list = line.split(',')
+        wl_name_test = file.split('.')[0]
+        if re.search(r'(IWM)', wl_name_test):
+            watchlist = re.search(r'(IWM)', wl_name_test).group()
+        else:
+            watchlist = wl_name_test
+        for elem in line_list:
+            try:
+                exchange = elem.split(':')[0]
+                ticker = elem.split(':')[1]
+                data = {'ticker': ticker, 'exchange': exchange, 'watchlist': watchlist}
+                wl_list.append(data)
+                ticker_count += 1
+            except Exception as error:
+                logger.error("failed on file: {} and elem {}".format(file, elem))
+        file_count += 1
+        f.close()
+    logger.info("total_files = {}, ticker_count = {}.".format(file_count, ticker_count, file))
+
+    return wl_list

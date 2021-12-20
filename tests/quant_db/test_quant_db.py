@@ -1,5 +1,6 @@
 from src.quant_db.quant_db_utils import create_index, create_table, drop_index, drop_table, \
-    insert_table, quant_db_stmt_dict
+    insert_table, quant_db_stmt_dict, parse_tv_watchlists, create_function_trigger, \
+    create_trigger_stored_procedure
 from pytest import mark
 import logging
 
@@ -26,7 +27,14 @@ class QuantDBTests:
 
         return len(found_items)
 
-    # pytest methods
+    def initial_setup(self, conn_fixture, obj_fixture):
+        conn = conn_fixture
+        obj = obj_fixture
+        cur = conn.cursor()
+
+        return conn, obj, cur
+
+    # Pytest methods
     @mark.quant_db_basic
     def test_db_connection(self, quant_db_conn):
         conn = quant_db_conn
@@ -37,9 +45,8 @@ class QuantDBTests:
 
     @mark.quant_db_basic
     def test_drop_tables(self, quant_db_conn, quant_tables):
-        conn = quant_db_conn
-        tables = quant_tables
-        cur = conn.cursor()
+
+        conn, tables, cur = self.initial_setup(quant_db_conn, quant_tables)
 
         for table in tables:
             drop_table(cur, table)
@@ -53,9 +60,7 @@ class QuantDBTests:
 
     @mark.quant_db_basic
     def test_create_tables(self, quant_db_conn, quant_tables):
-        conn = quant_db_conn
-        tables = quant_tables
-        cur = conn.cursor()
+        conn, tables, cur = self.initial_setup(quant_db_conn, quant_tables)
 
         for table in tables:
             create_table(cur, table)
@@ -72,9 +77,7 @@ class QuantDBTests:
 
     @mark.quant_db_basic
     def test_drop_indexes(self, quant_db_conn, quant_indexes):
-        conn = quant_db_conn
-        indexes = quant_indexes
-        cur = conn.cursor()
+        conn, indexes, cur = self.initial_setup(quant_db_conn, quant_indexes)
 
         for index in indexes:
             drop_index(cur, index)
@@ -90,9 +93,7 @@ class QuantDBTests:
 
     @mark.quant_db_basic
     def test_create_indexes(self, quant_db_conn, quant_indexes):
-        conn = quant_db_conn
-        indexes = quant_indexes
-        cur = conn.cursor()
+        conn, indexes, cur = self.initial_setup(quant_db_conn, quant_indexes)
 
         for index in indexes:
             create_index(cur, index)
@@ -110,12 +111,40 @@ class QuantDBTests:
             assert False
 
     @mark.quant_db_basic
-    def test_insert_watchlist_members_table(self, quant_db_conn, watchlist_members_data):
-        params = watchlist_members_data
+    def test_create_function_trigger_set_timestamp(self, quant_db_conn):
+        conn, table, cur = self.initial_setup(quant_db_conn, None)
 
-        conn = quant_db_conn
-        table = 'watchlist_members'
-        cur = conn.cursor()
+        status = create_function_trigger(cur)
+        conn.commit()
+
+        if status is not None:
+            assert False
+
+        assert True
+
+    @mark.quant_db_basic
+    def test_create_trigger_stored_procedure(self, quant_db_conn, quant_tables):
+        conn, tables, cur = self.initial_setup(quant_db_conn, quant_tables)
+
+        for table in tables:
+            status = create_trigger_stored_procedure(cur, table)
+            if status is not None:
+                assert False
+        conn.commit()
+
+        assert True
+
+    @mark.quant_db_basic
+    def test_insert_watchlist_members_table(self, quant_db_conn, watchlist_members_data):
+
+        """
+        if isinstance(watchlist_members_data, dict):
+            params = list(watchlist_members_data.values())
+        else:
+            params = watchlist_members_data
+        """
+        params = watchlist_members_data
+        conn, table, cur = self.initial_setup(quant_db_conn, 'watchlist_members')
 
         status = insert_table(cur, table, params)
         conn.commit()
@@ -124,13 +153,15 @@ class QuantDBTests:
 
         assert True
 
-    @mark.db_test1
+    @mark.skip(reason="Not sure if I will keep parse_tv_watchlist in quant_db_utils or in a"
+                      " marketdata file")
     @mark.quant_db_basic
     def test_create_watchlist_table(self, quant_db_conn):
-        conn = quant_db_conn
-        table = 'watchlist_members'
-        cur = conn.cursor()
+        conn, table, cur = self.initial_setup(quant_db_conn, 'watchlist_members')
 
+        wl_list = parse_tv_watchlists()
+
+        """
         sql = quant_db_stmt_dict[table]['select']
         cur.execute(sql)
 
@@ -139,8 +170,35 @@ class QuantDBTests:
             col = list(table)
             data = {'id': col[0], 'name': col[1]}
             wl_list.append(data)
-
+        """
         assert True
         #status = create_watchlist_table(cur, '0positions')
         #conn.commit()
+
+    @mark.quant_db_basic
+    def test_insert_master_watchlist_table(self, quant_db_conn, master_watchlist_data):
+        params = master_watchlist_data
+        conn, table, cur = self.initial_setup(quant_db_conn, 'master_watchlist')
+
+        status = insert_table(cur, table, params)
+
+        conn.commit()
+        if status is not None:
+            assert False
+
+        assert True
+
+    @mark.db_test1
+    @mark.quant_db_basic
+    def test_insert_accounts_table(self, quant_db_conn, accounts_data):
+        params = accounts_data
+        conn, table, cur = self.initial_setup(quant_db_conn, 'accounts')
+
+        status = insert_table(cur, table, params)
+
+        conn.commit()
+        if status is not None:
+            assert False
+
+        assert True
 

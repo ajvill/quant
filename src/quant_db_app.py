@@ -13,7 +13,8 @@ menu = """Please select an option.
 7. drop all tables
 8. tear down everything and build back db architecture
 9. insert values into table
-10. exit
+10. list table watchlist_members 
+11. exit
 
 Your selection: """
 
@@ -90,7 +91,7 @@ def main():
 
     print(welcome)
 
-    while (user_input := input(menu)) != "10":
+    while (user_input := input(menu)) != "11":
         if user_input == "0":
             print("Creating index...")
             prompt_index_action(cur, action='CREATE')
@@ -123,6 +124,12 @@ def main():
             prompt_index_action(cur, action='CREATE', all_indexes=True)
         elif user_input == "9":
             prompt_table_action(cur, action='INSERT', all_tables=False)
+        elif user_input == "10":
+            cur = get_watchlist_members(cur, 'watchlist_members')
+            for i, elem in cur:
+                print("{}. {}".format(i, elem))
+            print("\n")
+            cur = conn.cursor()
         else:
             print("Try again...please make a selection")
         conn.commit()
