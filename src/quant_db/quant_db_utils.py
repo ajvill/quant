@@ -368,37 +368,3 @@ def get_conn():
         return error.pgerror
 
     return connection
-
-
-def parse_tv_watchlists():
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    os.chdir('../../accounts/tv_watchlists')
-    files = os.listdir()
-    wl_list = []
-    data = {}
-
-    file_count = 0
-    ticker_count = 0
-    for file in files:
-        f = open(file, 'r')
-        line = f.readline()
-        line_list = line.split(',')
-        wl_name_test = file.split('.')[0]
-        if re.search(r'(IWM)', wl_name_test):
-            watchlist = re.search(r'(IWM)', wl_name_test).group()
-        else:
-            watchlist = wl_name_test
-        for elem in line_list:
-            try:
-                exchange = elem.split(':')[0]
-                ticker = elem.split(':')[1]
-                data = {'ticker': ticker, 'exchange': exchange, 'watchlist': watchlist}
-                wl_list.append(data)
-                ticker_count += 1
-            except Exception as error:
-                logger.error("failed on file: {} and elem {}".format(file, elem))
-        file_count += 1
-        f.close()
-    logger.info("total_files = {}, ticker_count = {}.".format(file_count, ticker_count, file))
-
-    return wl_list

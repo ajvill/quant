@@ -1,5 +1,5 @@
 from src.quant_db.quant_db_utils import create_index, create_table, drop_index, drop_table, \
-    insert_table, quant_db_stmt_dict, parse_tv_watchlists, create_function_trigger, \
+    insert_table, quant_db_stmt_dict, create_function_trigger, \
     create_trigger_stored_procedure
 from pytest import mark
 import logging
