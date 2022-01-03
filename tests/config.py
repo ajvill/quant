@@ -6,6 +6,7 @@ class Config:
         self.sandbox = False
         self.live = False
         self.db = False
+        self.db_test = False
 
         if env == 'sandbox':
             self.sandbox = True
@@ -13,3 +14,5 @@ class Config:
             self.live = True
         elif env == 'db':
             self.db = True
+        elif env == 'db_test':
+            self.db_test = True

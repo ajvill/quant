@@ -186,8 +186,8 @@ class QuantDB:
         'create_trigger': CREATE_TRIGGER_STORED_PROCEDURE
     }
 
-    def __init__(self):
-        self.conn = self.get_conn
+    def __init__(self, db_test=False):
+        self.conn = self.get_conn(db_test)
 
     def create_col_values_tuple(self, params):
         col_values_list = []
@@ -344,9 +344,13 @@ class QuantDB:
         row = cur.execute(sql, fields)
         return row
 
-    @property
-    def get_conn(self):
-        secrets = hidden.secrets()
+    def get_conn(self, db_test):
+
+        if db_test is False:
+            secrets = hidden.secrets()
+        else:
+            secrets = hidden.secrets_test()
+
         try:
             connection = psycopg2.connect(host=secrets['host'], port=secrets['port'],
                                           database=secrets['database'],

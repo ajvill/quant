@@ -32,6 +32,14 @@ def secrets():
             "pass": get_db_secret()}
 
 
+def secrets_test():
+    return {"host": "127.0.0.1",
+            "port": 5432,
+            "database": "quant_test",
+            "user": "quant",
+            "pass": get_db_secret()}
+
+
 def elastic() :
     return {"host": "www.pg4e.com",
             "prefix" : "elasticsearch",

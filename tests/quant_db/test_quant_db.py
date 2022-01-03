@@ -33,7 +33,10 @@ class QuantDBTests:
         return conn, obj, cur
 
     # Pytest methods
+    @mark.db_test1
+    @mark.db_test_test1
     @mark.quant_db_basic
+    @mark.quant_db_test_basic
     def test_db_connection(self, quant_db_conn):
         conn = quant_db_conn
         if conn is not None:
@@ -41,8 +44,8 @@ class QuantDBTests:
         else:
             assert False
 
-    @mark.db_test1
     @mark.quant_db_basic
+    @mark.quant_db_test_basic
     def test_drop_tables(self, quant_db_conn, quant_tables):
 
         conn, tables, cur = self.initial_setup(quant_db_conn, quant_tables)
@@ -58,6 +61,7 @@ class QuantDBTests:
             assert True
 
     @mark.quant_db_basic
+    @mark.quant_db_test_basic
     def test_create_tables(self, quant_db_conn, quant_tables):
         conn, tables, cur = self.initial_setup(quant_db_conn, quant_tables)
 
@@ -75,6 +79,7 @@ class QuantDBTests:
             assert False
 
     @mark.quant_db_basic
+    @mark.quant_db_test_basic
     def test_drop_indexes(self, quant_db_conn, quant_indexes):
         conn, indexes, cur = self.initial_setup(quant_db_conn, quant_indexes)
 
@@ -91,6 +96,7 @@ class QuantDBTests:
             assert False
 
     @mark.quant_db_basic
+    @mark.quant_db_test_basic
     def test_create_indexes(self, quant_db_conn, quant_indexes):
         conn, indexes, cur = self.initial_setup(quant_db_conn, quant_indexes)
 
@@ -110,6 +116,7 @@ class QuantDBTests:
             assert False
 
     @mark.quant_db_basic
+    @mark.quant_db_test_basic
     def test_create_function_trigger_set_timestamp(self, quant_db_conn):
         conn, table, cur = self.initial_setup(quant_db_conn, None)
 
@@ -122,6 +129,7 @@ class QuantDBTests:
         assert True
 
     @mark.quant_db_basic
+    @mark.quant_db_test_basic
     def test_create_trigger_stored_procedure(self, quant_db_conn, quant_tables):
         conn, tables, cur = self.initial_setup(quant_db_conn, quant_tables)
 
@@ -134,6 +142,7 @@ class QuantDBTests:
         assert True
 
     @mark.quant_db_basic
+    @mark.quant_db_test_basic
     def test_insert_watchlist_members_table(self, quant_db_conn, watchlist_members_data):
 
         """
@@ -152,29 +161,8 @@ class QuantDBTests:
 
         assert True
 
-    @mark.skip(reason="Not sure if I will keep parse_tv_watchlist in quant_db_utils or in a"
-                      " marketdata file")
     @mark.quant_db_basic
-    def test_create_watchlist_table(self, quant_db_conn):
-        conn, table, cur = self.initial_setup(quant_db_conn, 'watchlist_members')
-
-        wl_list = parse_tv_watchlists()
-
-        """
-        sql = quant_db_stmt_dict[table]['select']
-        cur.execute(sql)
-
-        wl_list = []
-        for table in cur:
-            col = list(table)
-            data = {'id': col[0], 'name': col[1]}
-            wl_list.append(data)
-        """
-        assert True
-        #status = create_watchlist_table(cur, '0positions')
-        #conn.commit()
-
-    @mark.quant_db_basic
+    @mark.quant_db_test_basic
     def test_insert_master_watchlist_table(self, quant_db_conn, master_watchlist_data):
         params = master_watchlist_data
         conn, table, cur = self.initial_setup(quant_db_conn, 'master_watchlist')
@@ -188,6 +176,7 @@ class QuantDBTests:
         assert True
 
     @mark.quant_db_basic
+    @mark.quant_db_test_basic
     def test_insert_accounts_table(self, quant_db_conn, accounts_data):
         params = accounts_data
         conn, table, cur = self.initial_setup(quant_db_conn, 'accounts')

@@ -42,6 +42,10 @@ def coinbase_client(env):
 @fixture(scope='class')
 def quant_db_conn(env):
     if env == 'db':
-        conn = QuantDB().get_conn
+        quantdb = QuantDB()
+        conn = quantdb.conn
+    elif env == 'db_test':
+        quantdb = QuantDB(db_test=True)
+        conn = quantdb.conn
 
     yield conn
