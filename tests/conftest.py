@@ -5,7 +5,7 @@ sys.path.append('../.')
 from pytest import fixture
 from config import Config
 from src.connectors.coinbase import CoinbaseClient
-from src.quant_db.quant_db_utils import get_conn
+from src.quant_db.quant_db_utils import QuantDB
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +42,6 @@ def coinbase_client(env):
 @fixture(scope='class')
 def quant_db_conn(env):
     if env == 'db':
-        conn = get_conn()
+        conn = QuantDB().get_conn
 
     yield conn

@@ -1,7 +1,7 @@
 import json
 import sys
 import os
-from src.quant_db import quant_db_utils
+from src.quant_db.quant_db_utils import QuantDB
 from pytest import fixture
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -19,12 +19,12 @@ def load_test_data(path):
 
 @fixture(scope='function')
 def quant_tables():
-    return quant_db_utils.QUANT_TABLES
+    return QuantDB().QUANT_TABLES
 
 
 @fixture(scope='function')
 def quant_indexes():
-    return quant_db_utils.QUANT_INDEXES
+    return QuantDB().QUANT_INDEXES
 
 
 @fixture(params=load_test_data(watchlist_members_data).values())
@@ -37,6 +37,7 @@ def watchlist_members_data(request):
 def master_watchlist_data(request):
     data = request.param
     return data
+
 
 @fixture(params=load_test_data(accounts_data).values())
 def accounts_data(request):

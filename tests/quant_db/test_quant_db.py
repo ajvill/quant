@@ -1,6 +1,4 @@
-from src.quant_db.quant_db_utils import create_index, create_table, drop_index, drop_table, \
-    insert_table, quant_db_stmt_dict, create_function_trigger, \
-    create_trigger_stored_procedure
+from src.quant_db.quant_db_utils import QuantDB
 from pytest import mark
 import logging
 
@@ -18,7 +16,7 @@ class QuantDBTests:
         else:
             col = 1
 
-        cur.execute(quant_db_stmt_dict['table_index_column_list'])
+        cur.execute(QuantDB().quant_db_stmt_dict['table_index_column_list'])
 
         found_items = set()
         for row in cur:
@@ -43,13 +41,14 @@ class QuantDBTests:
         else:
             assert False
 
+    @mark.db_test1
     @mark.quant_db_basic
     def test_drop_tables(self, quant_db_conn, quant_tables):
 
         conn, tables, cur = self.initial_setup(quant_db_conn, quant_tables)
 
         for table in tables:
-            drop_table(cur, table)
+            QuantDB().drop_table(cur, table)
         conn.commit()
 
         cur = conn.cursor()
@@ -63,7 +62,7 @@ class QuantDBTests:
         conn, tables, cur = self.initial_setup(quant_db_conn, quant_tables)
 
         for table in tables:
-            create_table(cur, table)
+            QuantDB().create_table(cur, table)
         conn.commit()
 
         cur = conn.cursor()
@@ -80,7 +79,7 @@ class QuantDBTests:
         conn, indexes, cur = self.initial_setup(quant_db_conn, quant_indexes)
 
         for index in indexes:
-            drop_index(cur, index)
+            QuantDB().drop_index(cur, index)
         conn.commit()
 
         cur = conn.cursor()
@@ -96,11 +95,11 @@ class QuantDBTests:
         conn, indexes, cur = self.initial_setup(quant_db_conn, quant_indexes)
 
         for index in indexes:
-            create_index(cur, index)
+            QuantDB().create_index(cur, index)
         conn.commit()
 
         cur = conn.cursor()
-        cur.execute(quant_db_stmt_dict['table_index_column_list'])
+        cur.execute(QuantDB().quant_db_stmt_dict['table_index_column_list'])
 
         found_indexes = self.get_num_found_objects(cur, indexes, 'index')
         num_of_indexes = len(indexes)
@@ -114,7 +113,7 @@ class QuantDBTests:
     def test_create_function_trigger_set_timestamp(self, quant_db_conn):
         conn, table, cur = self.initial_setup(quant_db_conn, None)
 
-        status = create_function_trigger(cur)
+        status = QuantDB().create_function_trigger(cur)
         conn.commit()
 
         if status is not None:
@@ -127,7 +126,7 @@ class QuantDBTests:
         conn, tables, cur = self.initial_setup(quant_db_conn, quant_tables)
 
         for table in tables:
-            status = create_trigger_stored_procedure(cur, table)
+            status = QuantDB().create_trigger_stored_procedure(cur, table)
             if status is not None:
                 assert False
         conn.commit()
@@ -146,7 +145,7 @@ class QuantDBTests:
         params = watchlist_members_data
         conn, table, cur = self.initial_setup(quant_db_conn, 'watchlist_members')
 
-        status = insert_table(cur, table, params)
+        status = QuantDB().insert_table(cur, table, params)
         conn.commit()
         if status is not None:
             assert False
@@ -180,7 +179,7 @@ class QuantDBTests:
         params = master_watchlist_data
         conn, table, cur = self.initial_setup(quant_db_conn, 'master_watchlist')
 
-        status = insert_table(cur, table, params)
+        status = QuantDB().insert_table(cur, table, params)
 
         conn.commit()
         if status is not None:
@@ -188,13 +187,12 @@ class QuantDBTests:
 
         assert True
 
-    @mark.db_test1
     @mark.quant_db_basic
     def test_insert_accounts_table(self, quant_db_conn, accounts_data):
         params = accounts_data
         conn, table, cur = self.initial_setup(quant_db_conn, 'accounts')
 
-        status = insert_table(cur, table, params)
+        status = QuantDB().insert_table(cur, table, params)
 
         conn.commit()
         if status is not None:
