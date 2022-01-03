@@ -54,8 +54,17 @@ class MarketDataTests:
         TSLAa = avp.get_daily_adjusted('TSLA', 'full')
         assert True
 
+    @mark.skip
     @mark.md_policy
     def test_avp_get_stock_daily_updates(self):
         avp = AlphaVantagePolicy()
         avp.get_stock_daily_updates(len(avp.tv_stock_list))
         assert True
+
+    @mark.md_policy
+    def test_yf_get_stock_metadata(self):
+        yfp = YFinancePolicy()
+        TSLA = yfp.get_stock_metadata('TSLA')
+        assert TSLA['sector']
+        assert TSLA['industry']
+        assert TSLA['marketCap']

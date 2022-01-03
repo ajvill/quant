@@ -1,4 +1,5 @@
 from alpha_vantage.timeseries import TimeSeries
+import yfinance as yf
 #from mds_decorators import MarketDataDecorators
 import functools
 import time
@@ -187,6 +188,15 @@ class AlphaVantagePolicy(MarketDataPolicy):
 class YFinancePolicy(MarketDataPolicy):
     def __init__(self):
         super().__init__()
+
+    def get_stock_metadata(self, ticker):
+        try:
+            ticker_metadata = pd.Series(yf.Ticker(ticker).info)
+        except Exception as error:
+            logger.error("Error calling Ticker class for {}, error: {}".format(ticker, error))
+            return error
+
+        return ticker_metadata
 
 
 class CoinbasePolicy(MarketDataPolicy):
