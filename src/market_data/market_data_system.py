@@ -1,10 +1,41 @@
 from alpha_vantage.timeseries import TimeSeries
+#from mds_decorators import MarketDataDecorators
+import functools
+import time
 import pandas as pd
 import os
 import re
 import logging
 
 logger = logging.getLogger()
+
+
+class MarketDataDecorators:
+    def __init__(self, func):
+        functools.update_wrapper(self, func)
+        self.func = func
+        self.num_calls = 0
+
+    def __call__(self, *args, **kwargs):
+        self.num_calls += 1
+        logger.info(f"Call {self.num_calls} of {self.func.__name__!r}")
+        return self.func(*args, **kwargs)
+
+    def slow_down(_func=None, *, rate=1):
+        """Sleep given amount of seconds before calling the function"""
+
+        def decorator_slow_down(func):
+            @functools.wraps(func)
+            def wrapper_slow_down(*args, **kwargs):
+                time.sleep(rate)
+                return func(*args, **kwargs)
+
+            return wrapper_slow_down
+
+        if _func is None:
+            return decorator_slow_down
+        else:
+            return decorator_slow_down(_func)
 
 
 class MarketDataSystem:
@@ -121,10 +152,36 @@ class AlphaVantagePolicy(MarketDataPolicy):
     def get_api_key():
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
         with open('../../accounts/alpha_vantage.txt', 'r') as api_file:
-            key = api_file.readline()
+            key = api_file.readline().rstrip()
         api_file.close()
 
         return key
+
+    def get_daily(self, ticker, outputsize='compact'):
+        try:
+            ticker_daily = self.ts.get_daily(ticker, outputsize=outputsize)
+        except Exception as error:
+            logger.error('Error calling get_daily for ticker {}, error = {}'.format(ticker, error))
+            return error
+
+        return ticker_daily
+
+    def get_daily_adjusted(self, ticker, outputsize='compact'):
+        try:
+            ticker_daily_adjusted = self.ts.get_daily_adjusted(ticker, outputsize=outputsize)
+        except Exception as error:
+            logger.error('Error calling get_daily for ticker {}, error = {}'.format(ticker, error))
+            return error
+
+        return ticker_daily_adjusted
+
+    @MarketDataDecorators.slow_down(rate=0.2)
+    def get_stock_daily_updates(self, num_stocks):
+        if num_stocks < 1:
+            print("Liftoff!")
+        else:
+            print(num_stocks)
+            self.get_stock_daily_updates(num_stocks - 1)
 
 
 class YFinancePolicy(MarketDataPolicy):

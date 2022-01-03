@@ -39,8 +39,23 @@ class MarketDataTests:
         stock_list = mdp.tv_stock_list
         assert isinstance(stock_list, list)
 
+    @mark.skip
     @mark.md_policy
-    def test_avp_timeseries_object(self):
+    def test_avp_get_daily(self):
         avp = AlphaVantagePolicy()
-
         assert isinstance(avp.ts, TimeSeries)
+
+        TSLA = avp.get_daily('TSLA')
+        assert True
+
+        TSLA = avp.get_daily('TSLA', 'full')
+        assert True
+
+        TSLAa = avp.get_daily_adjusted('TSLA', 'full')
+        assert True
+
+    @mark.md_policy
+    def test_avp_get_stock_daily_updates(self):
+        avp = AlphaVantagePolicy()
+        avp.get_stock_daily_updates(len(avp.tv_stock_list))
+        assert True
