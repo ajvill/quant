@@ -21,4 +21,7 @@ ibapi
 # python directory
 __pycache__/
 
+# python bytecode files and pycache
+__pycache__/
+*.pyc
 
